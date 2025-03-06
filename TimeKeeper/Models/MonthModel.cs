@@ -1,59 +1,49 @@
-﻿using TimeKeeper.Enums;
-
-namespace TimeKeeper.Models
+﻿namespace TimeKeeper.Models
 {
   class MonthModel
   {
-    private List<DayModel> Days { get; set; } = new List<DayModel>();
-    public Month Month { get; set; } = Month.January;
-    public double WorkedHours()
+    private Dictionary<int, DayModel> Days = new Dictionary<int, DayModel>();    
+    public int Id { get; set; } = -1;
+    public TimeSpan Deficit { get; set; }
+    public TimeSpan WorkedHours { get; set; }
+    public List<DayModel> GetDays()
     {
-      TimeSpan totalWork = new TimeSpan();
-      foreach (var day in Days)
-      {
-        totalWork += day.GetActualWorkDay();
-      }
-      return totalWork.TotalHours;
+      return Days.Values.ToList();
     }
-    public double Deficite()
+    public DayModel GetDay(int id)
     {
-      double deficit = 0.0;
-      foreach (var day in Days)
+      return Days[id];
+    }
+    public bool AddDay(DayModel day)
+    {
+      if(Days.ContainsKey(day.Id))
+      {
+        Days[day.Id] =  day;
+      }
+      else
+      {
+        Days.Add(day.Id, day);
+      }
+       
+      UpdateDeficit();
+      return true;
+    }
+    public void UpdateDeficit()
+    {
+      TimeSpan deficit = TimeSpan.Zero;
+      foreach (DayModel day in Days.Values.ToArray())
       {
         if (day.IsComplete)
         {
-          deficit += (day.GetActualWorkDay() - day.GetExpectedWorkDay()).TotalHours;
+          deficit += day.GetDeficit();
         }
       }
-      return deficit;
+      Deficit = deficit;
     }
-    public int[] GetNotCompletedDaysIndexes()
+    public bool ContainDayId(int id)
     {
-      List<int> indexes = new List<int>();
-      for (int i = 0; i < Days.Count; i++)
-      {
-        if (Days[i].IsComplete == false)
-        {
-          indexes.Add(i);
-        }
-      }
-      return indexes.ToArray();
+      return Days.ContainsKey(id);
     }
-    public int StartDay()
-    {
-      DayModel day = new DayModel();
-      day.StartTime = DateTime.Now;
-      Days.Add(day);
-      return Days.IndexOf(day);
-    }
-    public bool EndDay(int index)
-    {
-      if (index > 0 && index < Days.Count)
-      {
-        Days[index].EndTime = DateTime.Now;
-        return true;
-      }
-      return false;
-    }
+
   }
 }

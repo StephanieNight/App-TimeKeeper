@@ -28,13 +28,14 @@ namespace TimeKeeper
       terminal.Seperator();
       terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
       terminal.Seperator();
-      calendar.Load();
+      calendar.Load(); 
+      calendar.ActivateToday();
       terminal.WriteLine($"Loaded {calendar.GetDays().Count} days");
       terminal.WriteLine($"{calendar.GetIncomplteDays().Count} is incomplete");
       terminal.Seperator();
       Thread.Sleep(1500);
 
-      calendar.LoadToday();
+    
 
       while (isRunning)
       {
@@ -69,7 +70,7 @@ namespace TimeKeeper
             if (commands.Length == 1)
             {
               PrintDays();
-              InputHandler();  
+              InputHandler();
             }
             break;
           case "day":
@@ -119,7 +120,7 @@ namespace TimeKeeper
     static void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       terminal.WriteLine("Saving...");
-      calendar.SaveDays();
+      calendar.Save();
       terminal.WriteLine("Done");
     }
     // Screens. 
@@ -146,25 +147,35 @@ namespace TimeKeeper
       {
         if (day.IsComplete)
         {
-          deficit += day.GetDayWorkDeficit();
+          deficit += day.GetDeficit();
         }
       }
       terminal.WriteLine($"Total Deficit :{FormatedTimeSpan(deficit)}");
       terminal.Seperator();
-      if (calendar.IsDayActive())
+      DateTime currentDate = new DateTime();
+      currentDate = currentDate.AddYears(2025 - 1);
+      terminal.WriteLine($"Current Year  : {currentDate.ToString("yyyy")}");
+      if (calendar.IsMonthActive())
       {
-        DayModel day = calendar.GetActiveDay();
-        terminal.WriteLine($"Current day   : [{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.DayOfWeek : "")}");
-        terminal.WriteLine($"Date          : {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
-        terminal.WriteLine($"Started       : {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
-        terminal.WriteLine($"Ended         : {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-        terminal.WriteLine($"Lunch         : {day.Lunch.ToString()}");
-        terminal.Seperator();
-        terminal.WriteLine($"Expected work : {day.GetExpectedWorkDay()}");
-        terminal.WriteLine($"Actual worked :{FormatedActualWorkDay(day)}");
-        terminal.WriteLine($"Deficit       :{FormatedTimeSpan(day.GetDayWorkDeficit())}");
-        terminal.Seperator();
+        MonthModel month = calendar.GetActiveMonth();
+        currentDate = currentDate.AddMonths(month.Id - 1);
+        terminal.WriteLine($"Current Month : [{currentDate.Month:00}] {currentDate.ToString("MMMM")}");
+        if (calendar.IsDayActive())
+        {
+          DayModel day = calendar.GetActiveDay();
+          currentDate = currentDate.AddDays(day.Id - 1);
+          terminal.WriteLine($"Current day   : [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
+          terminal.WriteLine($"Date          : {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
+          terminal.WriteLine($"Started       : {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
+          terminal.WriteLine($"Ended         : {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
+          terminal.WriteLine($"Lunch         : {day.Lunch.ToString()}");
+          terminal.Seperator();
+          terminal.WriteLine($"Expected work : {day.GetExpectedWorkDay()}");
+          terminal.WriteLine($"Actual worked :{FormatedActualWorkDay(day)}");
+          terminal.WriteLine($"Deficit       :{FormatedTimeSpan(day.GetDeficit())}");
+        }
       }
+      terminal.Seperator();
     }
     private static void PrintDays()
     {
@@ -192,9 +203,9 @@ namespace TimeKeeper
       else
       {
         formated += "-";
-      }     
+      }
       formated += $"{Math.Abs(worked.Hours):00}:{Math.Abs(worked.Minutes):00}:{Math.Abs(worked.Seconds):00} [{worked.TotalHours:0.00}]";
-        return formated;
+      return formated;
     }
     private static string FormatedTimeSpan(TimeSpan timeSpan)
     {
