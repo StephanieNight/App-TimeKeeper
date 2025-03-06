@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using TimeKeeper.Models;
 
@@ -12,8 +12,9 @@ namespace TimeKeeper
   /// </summary>
   internal class TimeKeeperApp
   {
+    static FileHandler filesystem = new FileHandler("TimeKeeper");
     static TerminalHandler terminal = new TerminalHandler();
-    static CalendarHandler calendar = new CalendarHandler();
+    static CalendarHandler calendar = new CalendarHandler(filesystem);
 
     static bool isRunning = true;
 

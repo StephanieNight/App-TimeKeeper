@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using TimeKeeper.Models;
 
@@ -11,12 +11,16 @@ namespace TimeKeeper
     int ActiveDayId = -1;
     int ActiveMonthIndex = -1;
 
-    DayModel ActiveDay = null;
+    FileHandler filesystem;
     MonthModel ActiveMonth = null;
 
-    FileHandler filesystem = new FileHandler("TimeKeeper");
 
     Dictionary<int, DayModel> Days = new Dictionary<int, DayModel>();
+
+    public CalendarHandler(FileHandler filehandler)
+    {
+      filesystem = filehandler;
+    }
 
     public List<DayModel> GetDays()
     {
