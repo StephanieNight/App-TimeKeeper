@@ -191,19 +191,13 @@ namespace TimeKeeper
       else
       {
         formated += "-";
-      }
-     
+      }     
       formated += $"{Math.Abs(worked.Hours):00}:{Math.Abs(worked.Minutes):00}:{Math.Abs(worked.Seconds):00} [{worked.TotalHours:0.00}]";
         return formated;
     }
     private static string FormatedTimeSpan(TimeSpan timeSpan)
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
-    }
-    private static double GetMinutesInDecimal(int minutes)
-    {
-      double conversion = 100 / 60 / 100;
-      return conversion * minutes;
     }
   }
 }
