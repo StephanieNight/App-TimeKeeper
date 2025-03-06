@@ -46,10 +46,7 @@ namespace TimeKeeper
     public void LoadToday()
     {
       DateTime today = DateTime.Today;
-      if (Days.Keys.Contains(today.Day))
-      {
-        ActiveDayId = today.Day;
-      }
+      ActivateDay(today.Day);     
     }
     public void ActivateDay(int id)
     {
@@ -62,14 +59,6 @@ namespace TimeKeeper
     public void DeActivateDay(int index)
     {
       ActiveDayId = -1;
-    }
-    public int AddDay()
-    {
-      DayModel day = new DayModel();
-      day.StartTime = DateTime.Now;
-      Days.Add(day.Id, day);
-      ActivateDay(day.Id);
-      return ActiveMonthIndex;
     }
     public void SetDayStart(DateTime startDatetime)
     {
@@ -86,6 +75,21 @@ namespace TimeKeeper
     public DayModel GetActiveDay()
     {
       return Days[ActiveDayId];
+    }
+    public void AddDay(DayModel day, bool activate)
+    {
+      Days.Add(day.Id,day);
+      if (activate)
+      {
+        ActivateDay(day.Id);
+      }
+    }
+    public void StartDay()
+    {
+      DayModel day = new DayModel();
+      day.StartTime = DateTime.Now;
+      Days.Add(day.Id, day);
+      ActivateDay(day.Id);      
     }
     public void EndDay()
     {

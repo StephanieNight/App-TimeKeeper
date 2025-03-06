@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using TimeKeeper.Models;
 
@@ -59,7 +59,7 @@ namespace TimeKeeper
             break;
           case "checkin":
           case "clockin":
-            calendar.AddDay();
+            calendar.StartDay();
             break;
           case "checkout":
           case "clockout":
