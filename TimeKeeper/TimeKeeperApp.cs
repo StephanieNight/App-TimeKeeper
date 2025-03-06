@@ -149,7 +149,7 @@ namespace TimeKeeper
           deficit += day.GetDayWorkDeficit();
         }
       }
-      terminal.WriteLine($"Total Deficit :{(deficit.TotalSeconds>0?"+":"")}{deficit}");
+      terminal.WriteLine($"Total Deficit :{FormatedTimeSpan(deficit)}");
       terminal.Seperator();
       if (calendar.IsDayActive())
       {
