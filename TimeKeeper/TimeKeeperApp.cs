@@ -154,7 +154,7 @@ namespace TimeKeeper
       terminal.Seperator();
       DateTime currentDate = new DateTime();
       currentDate = currentDate.AddYears(2025 - 1);
-      terminal.WriteLine($"Current Year  : {currentDate.ToString("yyyy")}");
+      terminal.WriteLine($"Current Year  : [{currentDate.ToString("yy")}] {currentDate.ToString("yyyy")}");
       if (calendar.IsMonthActive())
       {
         MonthModel month = calendar.GetActiveMonth();
