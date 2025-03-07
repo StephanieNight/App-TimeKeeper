@@ -1,4 +1,4 @@
-namespace TimeKeeper
+﻿namespace TimeKeeper
 {
   class TerminalHandler
   {
