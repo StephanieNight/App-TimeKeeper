@@ -1,14 +1,14 @@
-﻿using System;
+using System;
 using System.Globalization;
 using TimeKeeper.Models;
 
 namespace TimeKeeper
 {
   /// <summary>
-  /// The time keeper is a little app for simplyfying office hours
-  /// this app should not handle stuff like vacation or weeks. 
-  /// this is only for clocking in and clocking out, and keeping up with flex over time. 
-  /// specefic task time is handled by other applications. 
+  /// The time keeper is a little app for simplyfying office hours.
+  /// This app should not handle stuff like vacation or weeks. 
+  /// This is only for clocking in and clocking out, and keeping up with flex over time. 
+  /// Specefic task time is handled by other applications. 
   /// </summary>
   internal class TimeKeeperApp
   {
