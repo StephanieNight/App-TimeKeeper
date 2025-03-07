@@ -183,7 +183,35 @@ namespace TimeKeeper
       }
       terminal.Seperator();
     }
-    private static void PrintDays()
+    private static void DebugScreen()
+    {
+      terminal.Seperator();
+      Process p = Process.GetCurrentProcess();
+      long ram = p.PrivateMemorySize64;
+      terminal.WriteLine($"RAM: {ram / 1024 / 1024} MB");
+      p.Dispose();
+      terminal.Seperator();
+      var months = calendar.GetMonths();
+
+      var daysCount = 0;
+
+      foreach (MonthModel month in months)
+      {
+        DateOnly date = new DateOnly();
+        date = date.AddYears(DateTime.Now.Year - 1);
+        date = date.AddMonths(month.Id - 1);
+        terminal.WriteLine($"[{month.Id:00}] {date.ToString("MMMM")}.");
+        var count = month.GetDays().Count;
+        daysCount += count;
+        terminal.WriteLine($"      - Days loaded: {count}");
+      }
+
+      terminal.Seperator();
+
+      terminal.WriteLine($"Loaded Months : {months.Count}");
+      terminal.WriteLine($"Loaded Days   : {daysCount}");
+      terminal.Seperator();
+    }
     private static void StatusForActiveMonth(int limit = -1)
     {
       var days = calendar.GetDays();
