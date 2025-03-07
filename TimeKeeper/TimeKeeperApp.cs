@@ -69,9 +69,15 @@ namespace TimeKeeper
           case "days":
             if (commands.Length == 1)
             {
-              PrintDays();
-              InputHandler();
+              StatusForActiveMonth();
             }
+            else if (commands[1].ToLower() == "-limit" ||
+                commands[1].ToLower() == "-l")
+            {
+              int l = Int32.Parse(commands[2]);
+              StatusForActiveMonth(l);
+            }
+            InputHandler();
             break;
           case "day":
             if (commands[1].ToLower() == "-get" ||
@@ -178,12 +184,17 @@ namespace TimeKeeper
       terminal.Seperator();
     }
     private static void PrintDays()
+    private static void StatusForActiveMonth(int limit = -1)
     {
       var days = calendar.GetDays();
-      for (int i = 0; i < days.Count; i++)
+      if (limit == -1)
+      {
+        limit = days.Count;
+      }
+      for (int i = 0; i < limit; i++)
       {
         DayModel day = days[i];
-        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")}");
+        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.GetActualWorkDay().TotalHours:0.00}]");
       }
     }
 
