@@ -57,6 +57,10 @@ namespace TimeKeeper
           case "exit":
             isRunning = false;
             break;
+          case "debug":
+            DebugScreen();
+            terminal.WaitForKeypress();
+            break;
           case "checkin":
           case "clockin":
             calendar.StartDay();
