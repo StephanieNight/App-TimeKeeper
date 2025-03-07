@@ -131,6 +131,7 @@ namespace TimeKeeper
       terminal.WriteLine("Saving...");
       calendar.Save();
       terminal.WriteLine("Done");
+      Thread.Sleep(500);
     }
     // Screens. 
     private static void MainScreen()
