@@ -1,5 +1,4 @@
 ﻿using System.Text.Json.Serialization;
-using TimeKeeper.Enums;
 
 namespace TimeKeeper.Models
 {
@@ -57,7 +56,7 @@ namespace TimeKeeper.Models
       }
       return DateTime.Now - StartTime.Value - Lunch;
     }
-    public TimeSpan GetDayWorkDeficit()
+    public TimeSpan GetDeficit()
     {
       return GetActualWorkDay() - GetExpectedWorkDay();
     }
