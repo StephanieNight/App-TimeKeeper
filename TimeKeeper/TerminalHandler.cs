@@ -8,14 +8,12 @@
         Console.ReadKey(false); // skips previous input chars
     }
     public void WaitForKeypress()
-    {
-      ClearInputBuffer();
+    {     
       Console.ReadKey();
     }
    
     public string GetInput()
     {
-      ClearInputBuffer();
       return Console.ReadLine();
     }
     public void Write(string value)

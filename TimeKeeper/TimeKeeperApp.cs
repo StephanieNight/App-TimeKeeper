@@ -1,19 +1,19 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Diagnostics;
 using TimeKeeper.Models;
 
 namespace TimeKeeper
 {
   /// <summary>
-  /// The time keeper is a little app for simplyfying office hours
-  /// this app should not handle stuff like vacation or weeks. 
-  /// this is only for clocking in and clocking out, and keeping up with flex over time. 
-  /// specefic task time is handled by other applications. 
+  /// The time keeper is a little app for simplyfying office hours.
+  /// This app should not handle stuff like vacation or weeks. 
+  /// This is only for clocking in and clocking out, and keeping up with flex over time. 
+  /// Specefic task time is handled by other applications. 
   /// </summary>
   internal class TimeKeeperApp
   {
+    static FileHandler filesystem = new FileHandler("TimeKeeper");
     static TerminalHandler terminal = new TerminalHandler();
-    static CalendarHandler calendar = new CalendarHandler();
+    static CalendarHandler calendar = new CalendarHandler(filesystem);
 
     static bool isRunning = true;
 
@@ -28,12 +28,11 @@ namespace TimeKeeper
       terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
       terminal.Seperator();
       calendar.Load();
+      calendar.ActivateToday();
       terminal.WriteLine($"Loaded {calendar.GetDays().Count} days");
       terminal.WriteLine($"{calendar.GetIncomplteDays().Count} is incomplete");
       terminal.Seperator();
       Thread.Sleep(1500);
-
-      calendar.LoadToday();
 
       while (isRunning)
       {
@@ -56,9 +55,13 @@ namespace TimeKeeper
           case "exit":
             isRunning = false;
             break;
+          case "debug":
+            DebugScreen();
+            terminal.WaitForKeypress();
+            break;
           case "checkin":
           case "clockin":
-            calendar.AddDay();
+            calendar.StartDay();
             break;
           case "checkout":
           case "clockout":
@@ -67,9 +70,15 @@ namespace TimeKeeper
           case "days":
             if (commands.Length == 1)
             {
-              PrintDays();
-              InputHandler();  
+              StatusForActiveMonth();
             }
+            else if (commands[1].ToLower() == "-limit" ||
+                commands[1].ToLower() == "-l")
+            {
+              int l = Int32.Parse(commands[2]);
+              StatusForActiveMonth(l);
+            }
+            InputHandler();
             break;
           case "day":
             if (commands[1].ToLower() == "-get" ||
@@ -118,60 +127,108 @@ namespace TimeKeeper
     static void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       terminal.WriteLine("Saving...");
-      calendar.SaveDays();
+      calendar.Save();
       terminal.WriteLine("Done");
+      Thread.Sleep(500);
     }
     // Screens. 
     private static void MainScreen()
     {
-      if (calendar.GetIncomplteDays().Count > 0)
+      var incompleteDays = calendar.GetIncomplteDays();
+      if (incompleteDays.Count > 0)
       {
-        terminal.Seperator();
-        terminal.WriteLine($"Incomplete days");
-
-        var days = calendar.GetDays();
-        for (int i = 0; i < days.Count; i++)
+        if (incompleteDays.Count == 1 &&
+           incompleteDays[0].StartTime.HasValue &&
+           incompleteDays[0].StartTime.Value.Date == DateTime.Now.Date)
         {
-          DayModel day = days[i];
-          if (day.IsComplete == false)
+          // Do nothing this is expected for the current date to not be complete.
+        }
+        else
+        {
+          terminal.Seperator();
+          terminal.WriteLine($"Incomplete days");
+          foreach (DayModel day in incompleteDays)
           {
             terminal.WriteLine($"[{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
           }
+          terminal.Seperator();
         }
       }
-      terminal.Seperator();
       TimeSpan deficit = TimeSpan.Zero;
       foreach (var day in calendar.GetDays())
       {
         if (day.IsComplete)
         {
-          deficit += day.GetDayWorkDeficit();
+          deficit += day.GetDeficit();
         }
       }
-      terminal.WriteLine($"Total Deficit :{(deficit.TotalSeconds>0?"+":"")}{deficit}");
+      terminal.WriteLine($"Total Deficit  : {FormatedTimeSpan(deficit)}");
       terminal.Seperator();
-      if (calendar.IsDayActive())
+      DateTime currentDate = new DateTime();
+      currentDate = currentDate.AddYears(2025 - 1);
+      terminal.WriteLine($"Active Year    :  [{currentDate.ToString("yy")}] {currentDate.ToString("yyyy")}");
+      if (calendar.IsMonthActive())
       {
-        DayModel day = calendar.GetActiveDay();
-        terminal.WriteLine($"Current day   : [{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.DayOfWeek : "")}");
-        terminal.WriteLine($"Date          : {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
-        terminal.WriteLine($"Started       : {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
-        terminal.WriteLine($"Ended         : {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-        terminal.WriteLine($"Lunch         : {day.Lunch.ToString()}");
-        terminal.Seperator();
-        terminal.WriteLine($"Expected work : {day.GetExpectedWorkDay()}");
-        terminal.WriteLine($"Actual worked :{FormatedActualWorkDay(day)}");
-        terminal.WriteLine($"Deficit       :{FormatedTimeSpan(day.GetDayWorkDeficit())}");
-        terminal.Seperator();
+        MonthModel month = calendar.GetActiveMonth();
+        currentDate = currentDate.AddMonths(month.Id - 1);
+        terminal.WriteLine($"Active Month   :  [{currentDate.Month:00}] {currentDate.ToString("MMMM")}");
+        if (calendar.IsDayActive())
+        {
+          DayModel day = calendar.GetActiveDay();
+          currentDate = currentDate.AddDays(day.Id - 1);
+          terminal.WriteLine($"Active day     :  [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
+          terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
+          terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
+          terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
+          terminal.WriteLine($"Lunch          :  {day.Lunch.ToString()}");
+          terminal.Seperator();
+          terminal.WriteLine($"Expected work  :  {day.GetExpectedWorkDay()}");
+          terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
+          terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
+        }
       }
+      terminal.Seperator();
     }
-    private static void PrintDays()
+    private static void DebugScreen()
+    {
+      terminal.Seperator();
+      Process p = Process.GetCurrentProcess();
+      long ram = p.PrivateMemorySize64;
+      terminal.WriteLine($"RAM: {ram / 1024 / 1024} MB");
+      p.Dispose();
+      terminal.Seperator();
+      var months = calendar.GetMonths();
+
+      var daysCount = 0;
+
+      foreach (MonthModel month in months)
+      {
+        DateOnly date = new DateOnly();
+        date = date.AddYears(DateTime.Now.Year - 1);
+        date = date.AddMonths(month.Id - 1);
+        terminal.WriteLine($"[{month.Id:00}] {date.ToString("MMMM")}.");
+        var count = month.GetDays().Count;
+        daysCount += count;
+        terminal.WriteLine($"      - Days loaded: {count}");
+      }
+
+      terminal.Seperator();
+
+      terminal.WriteLine($"Loaded Months : {months.Count}");
+      terminal.WriteLine($"Loaded Days   : {daysCount}");
+      terminal.Seperator();
+    }
+    private static void StatusForActiveMonth(int limit = -1)
     {
       var days = calendar.GetDays();
-      for (int i = 0; i < days.Count; i++)
+      if (limit == -1)
+      {
+        limit = days.Count;
+      }
+      for (int i = 0; i < limit; i++)
       {
         DayModel day = days[i];
-        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")}");
+        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.GetActualWorkDay().TotalHours:0.00}]");
       }
     }
 
@@ -192,18 +249,12 @@ namespace TimeKeeper
       {
         formated += "-";
       }
-     
       formated += $"{Math.Abs(worked.Hours):00}:{Math.Abs(worked.Minutes):00}:{Math.Abs(worked.Seconds):00} [{worked.TotalHours:0.00}]";
-        return formated;
+      return formated;
     }
     private static string FormatedTimeSpan(TimeSpan timeSpan)
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
-    }
-    private static double GetMinutesInDecimal(int minutes)
-    {
-      double conversion = 100 / 60 / 100;
-      return conversion * minutes;
     }
   }
 }
