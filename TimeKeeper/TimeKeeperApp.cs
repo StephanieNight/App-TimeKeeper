@@ -136,22 +136,26 @@ namespace TimeKeeper
     // Screens. 
     private static void MainScreen()
     {
-      if (calendar.GetIncomplteDays().Count > 0)
+      var incompleteDays = calendar.GetIncomplteDays();
+      if (incompleteDays.Count > 0)
       {
-        terminal.Seperator();
-        terminal.WriteLine($"Incomplete days");
-
-        var days = calendar.GetDays();
-        for (int i = 0; i < days.Count; i++)
+        if (incompleteDays.Count == 1 &&
+           incompleteDays[0].StartTime.HasValue &&
+           incompleteDays[0].StartTime.Value.Date == DateTime.Now.Date)
         {
-          DayModel day = days[i];
-          if (day.IsComplete == false)
+          // Do nothing this is expected for the current date to not be complete.
+        }
+        else
+        {
+          terminal.Seperator();
+          terminal.WriteLine($"Incomplete days");
+          foreach (DayModel day in incompleteDays)
           {
             terminal.WriteLine($"[{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
           }
+          terminal.Seperator();
         }
       }
-      terminal.Seperator();
       TimeSpan deficit = TimeSpan.Zero;
       foreach (var day in calendar.GetDays())
       {
