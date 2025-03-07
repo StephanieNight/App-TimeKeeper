@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Text.Json;
 using TimeKeeper.Models;
@@ -30,6 +30,10 @@ namespace TimeKeeper
         return Months[ActiveMonthId].GetDays();
       }
       return new List<DayModel>();
+    }
+    public List<MonthModel> GetMonths()
+    {
+      return Months.Values.ToList();
     }
     public List<DayModel> GetIncomplteDays()
     {
@@ -96,7 +100,7 @@ namespace TimeKeeper
     public DayModel GetActiveDay()
     {
       var month = GetActiveMonth();
-      if(month != null) { return month.GetDay(ActiveDayId); }          
+      if (month != null) { return month.GetDay(ActiveDayId); }
       return null;
     }
 
@@ -187,7 +191,7 @@ namespace TimeKeeper
         {
           DayModel day = filesystem.Deserialize<DayModel>(dayfile);
           Months[ActiveMonthId].AddDay(day);
-        }       
+        }
       }
     }
     public void Save()
