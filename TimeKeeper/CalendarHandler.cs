@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using TimeKeeper.Models;
@@ -16,7 +17,7 @@ namespace TimeKeeper
 
     FileHandler filesystem;
 
-    Dictionary<int, MonthModel> Months = new Dictionary<int, MonthModel>();
+    Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
     public CalendarHandler(FileHandler filehandler)
     {
@@ -25,15 +26,27 @@ namespace TimeKeeper
 
     public List<DayModel> GetDays()
     {
-      if (IsMonthActive())
+      if (IsYearActive())
       {
-        return Months[ActiveMonthId].GetDays();
+        if (IsMonthActive())
+        {
+          return Years[ActiveYearId].GetMonth(ActiveMonthId).GetDays();
+        }
       }
       return new List<DayModel>();
     }
     public List<MonthModel> GetMonths()
     {
-      return Months.Values.ToList();
+      if (IsYearActive())
+      {
+        return Years[ActiveYearId].GetMonths();
+      }
+      return new List<MonthModel>();
+    }
+    public List<YearModel> GetYears()
+    {
+
+      return Years.Values.ToList();
     }
     public List<DayModel> GetIncomplteDays()
     {
@@ -48,53 +61,97 @@ namespace TimeKeeper
       return DaysNotCompleted;
     }
 
+    public bool IsYearActive()
+    {
+      return Years.ContainsKey(ActiveYearId);
+    }
     public bool IsMonthActive()
     {
-      return Months.ContainsKey(ActiveMonthId);
+      if (IsYearActive())
+      {
+        return Years[ActiveYearId].ContainMonthId(ActiveMonthId);
+      }
+      return false;
     }
     public bool IsDayActive()
     {
-      if (IsMonthActive())
+      if (IsYearActive())
       {
-        return Months[ActiveMonthId].ContainDayId(ActiveDayId);
+        if (IsMonthActive())
+        {
+          return GetActiveYear().GetMonth(ActiveMonthId).ContainDayId(ActiveDayId);
+        }
       }
       return false;
     }
 
-    public void ActivateToday()
+    public void ActivateToday(DateTime today = new DateTime())
     {
-      DateTime today = DateTime.Today;
+      if (today == new DateTime())
+      {
+        today = DateTime.Today;
+      }
+      ActivateYear(today.Year);
       ActivateMonth(today.Month);
       ActivateDay(today.Day);
     }
-    public void ActivateYear()
+    public bool ActivateYear(int yearId)
+    {
+      if (Years.ContainsKey(yearId))
+      {
+        ActiveYearId = yearId;
+        LoadMonths();
+        return true;
+      }
+      return false;
+    }
+    public bool ActivateMonth(int monthId)
     {
 
-    }
-    public void ActivateMonth(int id)
-    {
-      ActiveMonthId = id;
-      LoadMonth();
-    }
-    public void ActivateDay(int id)
-    {
-      if (IsMonthActive())
-        if (Months[ActiveMonthId].ContainDayId(id))
+      if (IsYearActive())
+      {
+        if (GetActiveYear().ContainMonthId(monthId))
         {
-          ActiveDayId = id;
+          ActiveMonthId = monthId;
+          LoadDays();
+          return true;
         }
+      }
+      return false;
     }
+    public bool ActivateDay(int dayId)
+    {
+
+      if (IsYearActive())
+      {
+        if (IsMonthActive())
+        {
+          if (GetActiveMonth().ContainDayId(dayId))
+          {
+            ActiveDayId = dayId;
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
     public void DeActivateDay()
     {
       ActiveDayId = -1;
     }
-
+    public YearModel GetActiveYear()
+    {
+      if (Years.ContainsKey(ActiveYearId))
+      {
+        return Years[ActiveYearId];
+      }
+      return null;
+    }
     public MonthModel GetActiveMonth()
     {
-      if (IsMonthActive())
-      {
-        return Months[ActiveMonthId];
-      }
+      var year = GetActiveYear();
+      if (year != null) { return year.GetMonth(ActiveMonthId); }
       return null;
     }
     public DayModel GetActiveDay()
@@ -103,10 +160,20 @@ namespace TimeKeeper
       if (month != null) { return month.GetDay(ActiveDayId); }
       return null;
     }
+    public void AddYear(YearModel year, bool activate)
+    {
+      Years.Add(year.Id, year);
+      if (IsYearActive() == false)
 
+        if (activate)
+        {
+          ActivateYear(year.Id);
+        }
+    }
     public void AddMonth(MonthModel month, bool activate)
     {
-      Months.Add(month.Id, month);
+      if (IsYearActive() == true)
+        Years[ActiveYearId].AddMonth(month);
       if (activate)
       {
         ActivateMonth(month.Id);
@@ -114,37 +181,53 @@ namespace TimeKeeper
     }
     public void AddDay(DayModel day, bool activate)
     {
-      if (IsMonthActive() == false)
-      {
-        int id = day.StartTime.HasValue ? day.StartTime.Value.Month : -1;
-        if (Months.ContainsKey(id))
-        {
-          ActiveMonthId = id;
-        }
-        else
-        {
-          var month = new MonthModel();
-          month.Id = id;
-          AddMonth(month, true);
-        }
-      }
-
-      bool success = Months[ActiveMonthId].AddDay(day);
+      bool success = Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
       if (activate && success)
       {
         ActivateDay(day.Id);
       }
+    }
+    public void ClockIn(DateTime startDateTime)
+    {
+      // Year
+      if (IsYearActive() == false)
+      {
+        if (Years.ContainsKey(startDateTime.Year) == false)
+        {
+          YearModel year = new YearModel();
+          year.Id = startDateTime.Year;
+          AddYear(year, true);
+        }
+      }
 
+      // Month
+      if (IsMonthActive() == false)
+      {
+        if (ActivateMonth(startDateTime.Month) == false)
+        {
+          MonthModel month = new MonthModel();
+          month.Id = startDateTime.Month;
+          AddMonth(month, true);
+        }
+      }
+
+      // Day
+      if (IsDayActive() == false)
+      {
+        if (Years[ActiveYearId].GetMonth(ActiveMonthId).ContainDayId(startDateTime.Day) == false)
+        {
+          DayModel day = new DayModel();
+          day.StartTime = startDateTime;
+          day.Id = startDateTime.Day;
+          AddDay(day, true);
+        }
+      }
+      UpdateDeficit();
     }
-    public void StartDay()
+    public void ClockOut(DateTime endDateTime)
     {
-      DayModel day = new DayModel();
-      day.StartTime = DateTime.Now;
-      AddDay(day, true);
-    }
-    public void EndDay()
-    {
-      SetDayEnd(DateTime.Now);
+      SetDayEnd(endDateTime);
+      UpdateDeficit();
     }
     public void SetDayStart(DateTime startDatetime)
     {
@@ -152,7 +235,7 @@ namespace TimeKeeper
       {
         DayModel day = GetActiveDay();
         day.StartTime = startDatetime;
-        Months[ActiveMonthId].UpdateDeficit();
+        UpdateDeficit();
       }
     }
     public void SetDayEnd(DateTime endDatetime)
@@ -161,7 +244,7 @@ namespace TimeKeeper
       {
         DayModel day = GetActiveDay();
         day.EndTime = endDatetime;
-        Months[ActiveMonthId].UpdateDeficit();
+        UpdateDeficit();
       }
     }
     public void SetDayLunch(TimeSpan lunchTime)
@@ -170,41 +253,65 @@ namespace TimeKeeper
       {
         DayModel day = GetActiveDay();
         day.Lunch = lunchTime;
-        Months[ActiveMonthId].UpdateDeficit();
+        UpdateDeficit();
       }
     }
-    public void Load()
+    public void LoadYears()
     {
-      var files = filesystem.GetFilesInFolder($"{PathsData}/2025");
-      foreach (var monthfile in files)
+      var files = filesystem.GetFilesInFolder($"{PathsData}");
+      foreach (var yearFile in files)
       {
-        MonthModel month = filesystem.Deserialize<MonthModel>(monthfile);
-        Months.Add(month.Id, month);
+        YearModel year = filesystem.Deserialize<YearModel>(yearFile);
+        Years.Add(year.Id, year);
       }
     }
-    public void LoadMonth()
+    public void UpdateDeficit()
+    {
+      foreach (YearModel year in Years.Values)
+      {
+        year.UpdateStatus();
+      }
+
+    }
+    public void LoadMonths()
+    {
+      if (IsYearActive())
+      {
+        var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
+        foreach (var monthFile in files)
+        {
+          MonthModel month = filesystem.Deserialize<MonthModel>(monthFile);
+          Years[ActiveYearId].AddMonth(month);
+        }
+      }
+    }
+    public void LoadDays()
     {
       if (IsMonthActive())
       {
-        var files = filesystem.GetFilesInFolder($"{PathsData}/2025/{ActiveMonthId:00}/");
+        var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
         foreach (var dayfile in files)
         {
           DayModel day = filesystem.Deserialize<DayModel>(dayfile);
-          Months[ActiveMonthId].AddDay(day);
+          if (day.Id == -1)
+          {
+            day.Id = Int32.Parse(Path.GetFileNameWithoutExtension(dayfile));
+          }
+          Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
       }
     }
     public void Save()
     {
-      foreach (MonthModel month in Months.Values)
+      foreach (YearModel year in Years.Values)
       {
-        filesystem.Serialize<MonthModel>($"{PathsData}/2025/{month.Id:00}.json", month);
-        var days = month.GetDays();
-        if (days.Count > 0)
+        filesystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
+        foreach (MonthModel month in year.GetMonths())
         {
-          foreach (DayModel day in days)
+          filesystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
+          foreach (DayModel day in month.GetDays())
           {
-            filesystem.Serialize<DayModel>($"{PathsData}/2025/{month.Id:00}/{day.Id:00}.json", day);
+            filesystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
           }
         }
       }

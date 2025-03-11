@@ -25,20 +25,26 @@
         Days.Add(day.Id, day);
       }
        
-      UpdateDeficit();
+      UpdateStatus();
       return true;
     }
-    public void UpdateDeficit()
+    public void UpdateStatus()
     {
-      TimeSpan deficit = TimeSpan.Zero;
-      foreach (DayModel day in Days.Values.ToArray())
+      if(Days.Count > 0)
       {
-        if (day.IsComplete)
+        TimeSpan deficit = TimeSpan.Zero;
+        TimeSpan worked = TimeSpan.Zero;
+        foreach (DayModel day in Days.Values.ToArray())
         {
-          deficit += day.GetDeficit();
+          if (day.IsComplete)
+          {
+            deficit += day.GetDeficit();
+            worked += day.GetActualWorkDay();
+          }
         }
+        Deficit = deficit;
+        WorkedHours = worked;
       }
-      Deficit = deficit;
     }
     public bool ContainDayId(int id)
     {
