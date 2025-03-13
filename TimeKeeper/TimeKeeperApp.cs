@@ -43,7 +43,6 @@ namespace TimeKeeper
       }
     }
 
-
     static void InputHandler()
     {
       terminal.WriteLine("Ready for input");
