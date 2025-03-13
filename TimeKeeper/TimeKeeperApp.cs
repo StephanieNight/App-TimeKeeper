@@ -14,7 +14,7 @@ namespace TimeKeeper
     static FileHandler filesystem = new FileHandler("TimeKeeper");
     static TerminalHandler terminal = new TerminalHandler();
     static CalendarHandler calendar = new CalendarHandler(filesystem);
-
+    static Settings settings = new Settings();
     static bool isRunning = true;
 
     static void Main(string[] args)
@@ -22,8 +22,9 @@ namespace TimeKeeper
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
       Console.SetWindowSize(44, 20);
+      LoadSettings();
 
-      terminal.WriteLine("Welcome");
+      terminal.WriteLine($"Welcome {settings.KeeperName}");
       terminal.Seperator();
       terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
       terminal.Seperator();
@@ -128,8 +129,21 @@ namespace TimeKeeper
     {
       terminal.WriteLine("Saving...");
       calendar.Save();
+      SaveSettings();
       terminal.WriteLine("Done");
       Thread.Sleep(500);
+    }
+    static void LoadSettings()
+    {
+      string settingsPath = $"{filesystem.BasePath}/settings.json";
+      if (filesystem.FileExists(settingsPath))
+      {
+        settings = filesystem.Deserialize<Settings>(settingsPath);
+      }
+    }
+    static void SaveSettings()
+    {
+      filesystem.Serialize<Settings>("settings.json", settings);
     }
     // Screens. 
     private static void MainScreen()
@@ -157,7 +171,7 @@ namespace TimeKeeper
       TimeSpan deficit = TimeSpan.Zero;
       foreach (var year in calendar.GetYears())
       {
-          deficit +=year.Deficit;        
+        deficit += year.Deficit;
       }
       terminal.WriteLine($"Total Deficit  : {FormatedTimeSpan(deficit)}");
       terminal.Seperator();

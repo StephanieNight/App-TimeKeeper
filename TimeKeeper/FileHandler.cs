@@ -15,6 +15,10 @@ namespace TimeKeeper
         Directory.CreateDirectory(BasePath);
       }
     }
+    public bool FileExists(string fileName)
+    {
+      return File.Exists($"{BasePath}/{fileName}");
+    }
     public void Serialize<T>(string path, T obj)
     {
       var options = new JsonSerializerOptions
