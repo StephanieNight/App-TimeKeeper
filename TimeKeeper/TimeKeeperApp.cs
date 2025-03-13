@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using TimeKeeper.Models;
 
 namespace TimeKeeper
@@ -196,7 +196,12 @@ namespace TimeKeeper
             terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-            terminal.WriteLine($"Lunch          :  {day.Lunch.ToString()}");
+
+            if (day.IsLunchComplete)
+            {
+              terminal.WriteLine($"Lunch          :  {day.Lunch.ToString()}");
+              terminal.WriteLine($"Lunch Ended    :  {day.LunchTimeCompleted.ToString("hh:mm:ss")}");
+            }              
             terminal.Seperator();
             terminal.WriteLine($"Expected work  :  {day.GetExpectedWorkDay()}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
