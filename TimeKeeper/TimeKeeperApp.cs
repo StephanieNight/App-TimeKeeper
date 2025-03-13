@@ -281,14 +281,16 @@ namespace TimeKeeper
     private static void StatusForActiveMonth(int limit = -1)
     {
       var days = calendar.GetDays();
-      if (limit == -1)
+      var startindex = 0;
+      var endindex = days.Count;
+      if (limit > -1)
       {
-        limit = days.Count;
+        startindex = endindex - limit;
       }
-      for (int i = 0; i < limit; i++)
+      for (int i = startindex; i < endindex; i++)
       {
         DayModel day = days[i];
-        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.GetActualWorkDay().TotalHours:0.00}] [{FormatedTimeSpan(day.GetDeficit())}]");
+        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.GetActualWorkDay().TotalHours:0.00}]");
       }
     }
 
