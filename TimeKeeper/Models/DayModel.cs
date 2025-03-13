@@ -8,12 +8,25 @@ namespace TimeKeeper.Models
     public DateTime? StartTime { get; set; } = DateTime.MinValue;
     public DateTime? EndTime { get; set; }
     public TimeSpan Lunch { get; set; } = new TimeSpan(0, 30, 0);
+    public TimeOnly LunchTimeCompleted { get; set; } = new TimeOnly(11, 45, 00);
     [JsonIgnore]
     public bool IsComplete
     {
       get
       {
         return StartTime.HasValue && EndTime.HasValue;
+      }
+    }
+    [JsonIgnore]
+    public bool IsLunchComplete
+    {
+      get
+      {
+        if (EndTime.HasValue)
+        {
+          return TimeOnly.FromDateTime(EndTime.Value) > LunchTimeCompleted;
+        }
+        return TimeOnly.FromDateTime(DateTime.Now) > LunchTimeCompleted;
       }
     }
     public TimeSpan GetExpectedWorkDay()
@@ -43,11 +56,16 @@ namespace TimeKeeper.Models
     }
     public TimeSpan GetActualWorkDay()
     {
+      TimeSpan work = DateTime.Now - StartTime.Value;
       if (IsComplete)
       {
-        return EndTime.Value - StartTime.Value - Lunch;
+        work = EndTime.Value - StartTime.Value;
       }
-      return DateTime.Now - StartTime.Value - Lunch;
+      if (IsLunchComplete)
+      {
+        work -= Lunch;
+      }
+      return work;
     }
     public TimeSpan GetDeficit()
     {
