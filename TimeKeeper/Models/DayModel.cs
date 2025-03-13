@@ -4,6 +4,7 @@ namespace TimeKeeper.Models
 {
   class DayModel
   {
+    public int Id { get; set; } = -1;
     public DateTime? StartTime { get; set; } = DateTime.MinValue;
     public DateTime? EndTime { get; set; }
     public TimeSpan Lunch { get; set; } = new TimeSpan(0, 30, 0);
@@ -13,14 +14,6 @@ namespace TimeKeeper.Models
       get
       {
         return StartTime.HasValue && EndTime.HasValue;
-      }
-    }
-    [JsonIgnore]
-    public int Id
-    {
-      get
-      {
-        return StartTime.HasValue ? StartTime.Value.Day : -1;
       }
     }
     public TimeSpan GetExpectedWorkDay()
@@ -58,8 +51,11 @@ namespace TimeKeeper.Models
     }
     public TimeSpan GetDeficit()
     {
-      return GetActualWorkDay() - GetExpectedWorkDay();
+      if (IsComplete)
+      {
+        return GetActualWorkDay() - GetExpectedWorkDay();
+      }
+      return new TimeSpan();
     }
-
   }
 }
