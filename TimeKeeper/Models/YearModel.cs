@@ -2,26 +2,49 @@
 {
   class YearModel
   {
-    public List<MonthModel> Months { get; set; } = new List<MonthModel>();
-    private DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-    public int GetYear { get { return Date.Year; } }
-    public double TotalWorkedHours()
+    private Dictionary<int, MonthModel> Months = new Dictionary<int, MonthModel>();
+    public int Id { get; set; } = -1;
+    public TimeSpan Deficit { get; set; }
+    public TimeSpan WorkedHours { get; set; }
+    public bool ContainMonthId(int id)
     {
-      double total = 0.0;
-      foreach (MonthModel month in Months)
-      {
-        total += month.WorkedHours();
-      }
-      return total;
+      return Months.ContainsKey(id);
     }
-    public double TotalDecifict()
+    public List<MonthModel> GetMonths()
     {
-      double total = 0.0;
-      foreach (MonthModel month in Months)
+      return Months.Values.ToList();
+    }
+    public MonthModel GetMonth(int id)
+    {
+      return Months[id];
+    }
+    public bool AddMonth(MonthModel month)
+    {
+      if (Months.ContainsKey(month.Id))
       {
-        total += month.Deficite();
+        Months[month.Id] = month;
       }
-      return total;
+      else
+      {
+        Months.Add(month.Id, month);
+      }
+      return true;
+    }
+    public void UpdateStatus()
+    {
+      if (Months.Count > 0)
+      {
+        TimeSpan deficit = TimeSpan.Zero;
+        TimeSpan worked = TimeSpan.Zero;
+        foreach (MonthModel month in Months.Values.ToArray())
+        {
+          month.UpdateStatus();
+          deficit += month.Deficit;
+          worked += month.WorkedHours;
+        }
+        Deficit = deficit;
+        WorkedHours = worked;
+      }
     }
   }
 }
