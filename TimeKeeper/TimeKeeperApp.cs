@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using TimeKeeper.Models;
 
 namespace TimeKeeper
@@ -59,6 +60,44 @@ namespace TimeKeeper
           case "debug":
             DebugScreen();
             terminal.WaitForKeypress();
+            break;
+          case "settings":
+            if (commands[1].ToLower() == "-keeper" ||
+                commands[1].ToLower() == "-k")
+            {
+              if (commands.Length == 3)
+              {
+                settings.KeeperName = commands[2];
+              }
+            }
+            else if (commands[1].ToLower() == "-rounding" ||
+                     commands[1].ToLower() == "-r")
+            {
+              if (commands.Length == 3)
+              {
+                int r = Int32.Parse(commands[2]);
+                switch (r)
+                {
+                  case (int)Rounding.FiveMinutes:
+                    settings.Rounding = Rounding.FiveMinutes;
+                    break;
+                  case (int)Rounding.TenMinutes:
+                    settings.Rounding = Rounding.TenMinutes;
+                    break;
+                  case (int)Rounding.FifteenMinutes:
+                    settings.Rounding = Rounding.FifteenMinutes;
+                    break;
+                  case (int)Rounding.ThirtyMinutes:
+                    settings.Rounding = Rounding.ThirtyMinutes;
+                    break;
+                  default:
+                    settings.Rounding = Rounding.None;
+                    break;
+                }
+                calendar.SetRounding(settings.Rounding);
+              }
+            }
+
             break;
           case "checkin":
           case "clockin":
@@ -201,7 +240,7 @@ namespace TimeKeeper
             {
               terminal.WriteLine($"Lunch          :  {day.Lunch.ToString()}");
               terminal.WriteLine($"Lunch Ended    :  {day.LunchTimeCompleted.ToString("hh:mm:ss")}");
-            }              
+            }
             terminal.Seperator();
             terminal.WriteLine($"Expected work  :  {day.GetExpectedWorkDay()}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
@@ -220,12 +259,14 @@ namespace TimeKeeper
       terminal.WriteLine($"RAM: {ram / 1024 / 1024} MB");
       p.Dispose();
       terminal.Seperator();
+      terminal.WriteLine($"Keeper name: {settings.KeeperName}");
+      terminal.WriteLine($"Rounding   : {settings.Rounding}");
+      terminal.Seperator();
       var years = calendar.GetYears();
       var yearsDeficit = TimeSpan.Zero;
       var daysCount = 0;
       var monthsCount = 0;
       var yearsCount = years.Count;
-
 
       foreach (YearModel year in years)
       {
