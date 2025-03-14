@@ -16,6 +16,7 @@ namespace TimeKeeper
     int ActiveYearId = -1;
 
     FileHandler filesystem;
+    Rounding Rounding;
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
@@ -217,7 +218,7 @@ namespace TimeKeeper
         if (Years[ActiveYearId].GetMonth(ActiveMonthId).ContainDayId(startDateTime.Day) == false)
         {
           DayModel day = new DayModel();
-          day.StartTime = startDateTime;
+          day.StartTime = GetRoundedTime(startDateTime);
           day.Id = startDateTime.Day;
           AddDay(day, true);
         }
@@ -234,7 +235,7 @@ namespace TimeKeeper
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        day.StartTime = startDatetime;
+        day.StartTime = GetRoundedTime(startDatetime);
         UpdateDeficit();
       }
     }
@@ -243,7 +244,7 @@ namespace TimeKeeper
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        day.EndTime = endDatetime;
+        day.EndTime = GetRoundedTime(endDatetime);
         UpdateDeficit();
       }
     }
@@ -256,6 +257,24 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
+    private DateTime GetRoundedTime(DateTime dateTime)
+    {if(Rounding == Rounding.None)
+      {
+        return dateTime;
+      }
+      return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Rounding));
+    }
+    public void UpdateDeficit()
+    {
+      foreach (YearModel year in Years.Values)
+      {
+        year.UpdateStatus();
+      }
+    }
+    public void SetRounding(Rounding rounding)
+    {
+      Rounding = rounding;
+    }
     public void LoadYears()
     {
       var files = filesystem.GetFilesInFolder($"{PathsData}");
@@ -264,15 +283,8 @@ namespace TimeKeeper
         YearModel year = filesystem.Deserialize<YearModel>(yearFile);
         Years.Add(year.Id, year);
       }
-    }
-    public void UpdateDeficit()
-    {
-      foreach (YearModel year in Years.Values)
-      {
-        year.UpdateStatus();
-      }
+    }    
 
-    }
     public void LoadMonths()
     {
       if (IsYearActive())

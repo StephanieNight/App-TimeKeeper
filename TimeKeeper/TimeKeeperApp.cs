@@ -22,8 +22,9 @@ namespace TimeKeeper
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
       Console.SetWindowSize(44, 20);
-      LoadSettings();
 
+      LoadSettings();
+      calendar.SetRounding(settings.Rounding);
       terminal.WriteLine($"Welcome {settings.KeeperName}");
       terminal.Seperator();
       terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
