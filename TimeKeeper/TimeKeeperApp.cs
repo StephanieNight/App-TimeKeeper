@@ -122,8 +122,8 @@ namespace TimeKeeper
             break;
         }
       }
-
     }
+
     static void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       terminal.WriteLine("Saving...");
