@@ -174,10 +174,10 @@ namespace TimeKeeper
     }
     static void LoadSettings()
     {
-      string settingsPath = $"{filesystem.BasePath}/settings.json";
-      if (filesystem.FileExists(settingsPath))
+      string settingsFileName = $"settings.json";
+      if (filesystem.FileExists(settingsFileName))
       {
-        settings = filesystem.Deserialize<Settings>(settingsPath);
+        settings = filesystem.Deserialize<Settings>($"{filesystem.BasePath}/{settingsFileName}");
       }
     }
     static void SaveSettings()
@@ -247,7 +247,6 @@ namespace TimeKeeper
             terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
           }
         }
-
         terminal.Seperator();
       }
     }
@@ -261,6 +260,7 @@ namespace TimeKeeper
       terminal.Seperator();
       terminal.WriteLine($"Keeper name: {settings.KeeperName}");
       terminal.WriteLine($"Rounding   : {settings.Rounding}");
+      terminal.WaitForKeypress();
       terminal.Seperator();
       var years = calendar.GetYears();
       var yearsDeficit = TimeSpan.Zero;
