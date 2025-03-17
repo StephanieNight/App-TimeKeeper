@@ -69,11 +69,7 @@ namespace TimeKeeper.Models
     }
     public TimeSpan GetDeficit()
     {
-      if (IsComplete)
-      {
-        return GetActualWorkDay() - GetExpectedWorkDay();
-      }
-      return new TimeSpan();
+      return GetActualWorkDay() - GetExpectedWorkDay();    
     }
   }
 }
