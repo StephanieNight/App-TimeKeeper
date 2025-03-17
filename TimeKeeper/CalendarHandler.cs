@@ -136,7 +136,6 @@ namespace TimeKeeper
       }
       return false;
     }
-
     public void DeActivateDay()
     {
       ActiveDayId = -1;
@@ -258,10 +257,13 @@ namespace TimeKeeper
       }
     }
     private DateTime GetRoundedTime(DateTime dateTime)
-    {if(Rounding == Rounding.None)
+    {
+      if(Rounding == Rounding.None)
       {
         return dateTime;
       }
+      // Round Seconds
+      dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
       return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Rounding));
     }
     public void UpdateDeficit()
@@ -275,6 +277,7 @@ namespace TimeKeeper
     {
       Rounding = rounding;
     }
+
     public void LoadYears()
     {
       var files = filesystem.GetFilesInFolder($"{PathsData}");
@@ -284,7 +287,6 @@ namespace TimeKeeper
         Years.Add(year.Id, year);
       }
     }    
-
     public void LoadMonths()
     {
       if (IsYearActive())
