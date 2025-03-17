@@ -97,7 +97,42 @@ namespace TimeKeeper
                 calendar.SetRounding(settings.Rounding);
               }
             }
-
+            else if (commands[1].ToLower() == "-showdeficit" ||
+                     commands[1].ToLower() == "-sd")
+            {
+              bool showDeficit = false;
+              if (commands[2] == "0")
+              {
+                // value is allready 0
+              }
+              else if (commands[2] == "1")
+              {
+                showDeficit = true;
+              }
+              else
+              {
+                showDeficit = Boolean.Parse(commands[2]);
+              }
+              settings.ShowDeficit = showDeficit;
+            }
+            else if (commands[1].ToLower() == "-showtotalwork" ||
+                     commands[1].ToLower() == "-sw")
+            {
+              bool showWork = false;
+              if (commands[2] == "0")
+              {
+                // value is allready 0
+              }
+              else if  (commands[2] == "1")
+              {
+                showWork = true;
+              }
+              else
+              {
+                showWork = Boolean.Parse(commands[2]);
+              }                
+              settings.ShowTotalWork = showWork;
+            }
             break;
           case "checkin":
           case "clockin":
@@ -208,12 +243,24 @@ namespace TimeKeeper
         }
       }
       TimeSpan deficit = TimeSpan.Zero;
+      TimeSpan totalwork = TimeSpan.Zero;
       foreach (var year in calendar.GetYears())
       {
         deficit += year.Deficit;
+        totalwork += year.WorkedHours;
       }
-      terminal.WriteLine($"Total Deficit  : {FormatedTimeSpan(deficit)}");
-      terminal.Seperator();
+      if (settings.ShowDeficit || settings.ShowTotalWork)
+      {
+        if (settings.ShowDeficit)
+        {
+          terminal.WriteLine($"Total Deficit  : {FormatedTimeSpan(deficit)}");
+        }
+        if (settings.ShowTotalWork)
+        {
+          terminal.WriteLine($"Total Work     :  {totalwork.TotalHours:00.0} h");
+        }
+        terminal.Seperator();
+      }
       if (calendar.IsYearActive())
       {
         DateTime currentDate = new DateTime();
