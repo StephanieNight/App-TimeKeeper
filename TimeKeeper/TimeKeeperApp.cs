@@ -152,15 +152,36 @@ namespace TimeKeeper
             if (commands.Length == 1)
             {
               StatusForActiveMonth();
+              InputHandler();
+              break;
             }
-            else if (commands[1].ToLower() == "-limit" ||
-                commands[1].ToLower() == "-l")
+            if (commands[1] == "-limit" ||
+                commands[1] == "-l")
             {
               int l = Int32.Parse(commands[2]);
               StatusForActiveMonth(l);
+              InputHandler();
+              break;
             }
-            InputHandler();
+            if (commands[1] == "-expectedworkday" ||
+                commands[1] == "-ew")
+              if (commands.Length == 4)
+              {
+                TimeSpan ew = TimeSpan.Parse(commands[2]);
+                int d = Int32.Parse(commands[3]);
+                DayOfWeek wd = (DayOfWeek)d;
+                                
+                calendar.SetExpectedWorkDay(wd, ew);
+                if (settings.ExpectedWorkWeek.ContainsKey(wd))
+                {
+                  settings.ExpectedWorkWeek[wd] = ew;
+                  break;
+                }
+                settings.ExpectedWorkWeek.Add(wd, ew);
+              }
             break;
+
+
           case "day":
             if (commands[1].ToLower() == "-get" ||
                 commands[1].ToLower() == "-g")
@@ -196,6 +217,14 @@ namespace TimeKeeper
                 TimeSpan completed = TimeSpan.Parse(commands[2]);
                 calendar.SetDayLunchCompleted(completed);
                 break;
+              case "-expectedworkday":
+              case "-ew":
+                if (commands.Length == 3)
+                {                  
+                  TimeSpan ew = TimeSpan.Parse(commands[2]);
+                  calendar.SetDayExpectedWorkDay(ew);
+                }
+                break;
               default:
                 terminal.WriteLine($"Unknown tag {commands[1]}");
                 terminal.WriteLine("Valid tags: -[s]tart, -[e]nd, -[l]unch");
@@ -214,7 +243,7 @@ namespace TimeKeeper
       string settingsFileName = $"settings.json";
       if (filesystem.FileExists(settingsFileName))
       {
-        settings = filesystem.Deserialize<Settings>(settingsFileName,true);
+        settings = filesystem.Deserialize<Settings>(settingsFileName, true);
       }
     }
     static void SaveSettings()
@@ -417,7 +446,7 @@ namespace TimeKeeper
     private static string FormatedTimeSpan(TimeSpan timeSpan)
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
-    }    
+    }
   }
 
 }

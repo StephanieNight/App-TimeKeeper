@@ -26,7 +26,7 @@ namespace TimeKeeper
     {
       filesystem = filehandler;
       filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
-      
+
       // Load saved expected work week into dictionary.
       foreach (var work in expectedWorkWeek)
       {
@@ -71,6 +71,12 @@ namespace TimeKeeper
       return DaysNotCompleted;
     }
 
+    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
+      if(ExpectedWorkWeek.ContainsKey(dayOfWeek)){
+        return ExpectedWorkWeek[dayOfWeek];
+      }
+      return GetDefaultExpectedWorkDay(dayOfWeek);
+    }
     public TimeSpan GetDefaultExpectedWorkDay(DayOfWeek dayOfWeek)
     {
       switch (dayOfWeek)
@@ -247,7 +253,7 @@ namespace TimeKeeper
           DayModel day = new DayModel();
           var startTime = GetRoundedTime(startDateTime);
           day.StartTime = startTime;
-          day.ExpectedWorkDay = GetDefaultExpectedWorkDay(startTime.DayOfWeek);
+          day.ExpectedWorkDay = GetExpectedWorkDay(startTime.DayOfWeek);
           day.Id = startDateTime.Day;
           AddDay(day, true);
         }
@@ -297,6 +303,15 @@ namespace TimeKeeper
         DayModel day = GetActiveDay();
         var to = TimeOnly.FromTimeSpan(lunchTime);
         day.LunchTimeCompleted = to;
+        UpdateDeficit();
+      }
+    }
+    public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        day.ExpectedWorkDay = expectedWorkDay;
         UpdateDeficit();
       }
     }
@@ -370,7 +385,7 @@ namespace TimeKeeper
           // Backward compatability for exprected workday not being configuratble.
           if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
           {
-            day.ExpectedWorkDay = GetDefaultExpectedWorkDay(day.StartTime.Value.DayOfWeek);
+            day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
           }
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
