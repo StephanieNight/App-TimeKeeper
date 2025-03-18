@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace TimeKeeper
 {
@@ -27,8 +26,8 @@ namespace TimeKeeper
     public bool DirectoryExists(string directory, bool includeBasePath = true)
     {
       if (includeBasePath)
-        return File.Exists($"{BasePath}/{directory}");
-      return File.Exists($"{directory}");
+        return Directory.Exists($"{BasePath}/{directory}");
+      return Directory.Exists($"{directory}");
     }
     public void Serialize<T>(string path, T obj, bool includeBasePath = true)
     {
