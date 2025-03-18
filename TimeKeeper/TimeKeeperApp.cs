@@ -25,10 +25,11 @@ namespace TimeKeeper
       //Console.SetWindowSize(44, 20);
 
       filesystem = new FileHandler(settings.DataLocation);
-      terminal = new TerminalHandler();
-      calendar = new CalendarHandler(filesystem,settings.ExpectedWorkWeek);
 
       LoadSettings();
+
+      terminal = new TerminalHandler();
+      calendar = new CalendarHandler(filesystem, settings.ExpectedWorkWeek);
 
       calendar.SetRounding(settings.Rounding);
       terminal.WriteLine($"Welcome {settings.KeeperName}");
