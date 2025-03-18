@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Collections;
+using System.Text.Json.Serialization;
 
 namespace TimeKeeper.Models
 {
@@ -22,7 +23,14 @@ namespace TimeKeeper.Models
     {
       get
       {
-        if (EndTime.HasValue)
+        if (StartTime.HasValue)
+        {
+          if (TimeOnly.FromDateTime(StartTime.Value) > LunchTimeCompleted)
+          {
+              return false;
+          }
+        }
+        else if (EndTime.HasValue)
         {
           return TimeOnly.FromDateTime(EndTime.Value) > LunchTimeCompleted;
         }
@@ -69,7 +77,7 @@ namespace TimeKeeper.Models
     }
     public TimeSpan GetDeficit()
     {
-      return GetActualWorkDay() - GetExpectedWorkDay();    
+      return GetActualWorkDay() - GetExpectedWorkDay();
     }
   }
 }
