@@ -23,6 +23,7 @@ namespace TimeKeeper
     public CalendarHandler(FileHandler filehandler)
     {
       filesystem = filehandler;
+      filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
     }
 
     public List<DayModel> GetDays()
@@ -305,7 +306,7 @@ namespace TimeKeeper
     public void LoadMonths()
     {
       if (IsYearActive())
-      {
+      {        
         var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
         foreach (var monthFile in files)
         {

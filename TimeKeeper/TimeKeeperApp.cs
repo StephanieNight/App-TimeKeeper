@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using TimeKeeper.Models;
 
 namespace TimeKeeper
@@ -11,9 +12,9 @@ namespace TimeKeeper
   /// </summary>
   internal class TimeKeeperApp
   {
-    static FileHandler filesystem = new FileHandler("TimeKeeper");
-    static TerminalHandler terminal = new TerminalHandler();
-    static CalendarHandler calendar = new CalendarHandler(filesystem);
+    static FileHandler filesystem;
+    static TerminalHandler terminal;
+    static CalendarHandler calendar;
     static Settings settings = new Settings();
     static bool isRunning = true;
 
@@ -21,9 +22,14 @@ namespace TimeKeeper
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
-      Console.SetWindowSize(44, 20);
+      //Console.SetWindowSize(44, 20);
+
+      filesystem = new FileHandler(settings.DataLocation);
+      terminal = new TerminalHandler();
+      calendar = new CalendarHandler(filesystem);
 
       LoadSettings();
+
       calendar.SetRounding(settings.Rounding);
       terminal.WriteLine($"Welcome {settings.KeeperName}");
       terminal.Seperator();
@@ -207,7 +213,7 @@ namespace TimeKeeper
       string settingsFileName = $"settings.json";
       if (filesystem.FileExists(settingsFileName))
       {
-        settings = filesystem.Deserialize<Settings>($"{filesystem.BasePath}/{settingsFileName}");
+        settings = filesystem.Deserialize<Settings>(settingsFileName,true);
       }
     }
     static void SaveSettings()
@@ -410,6 +416,7 @@ namespace TimeKeeper
     private static string FormatedTimeSpan(TimeSpan timeSpan)
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
-    }
+    }    
   }
+
 }
