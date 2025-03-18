@@ -5,7 +5,7 @@ namespace TimeKeeper.Models
   class DayModel
   {
     public int Id { get; set; } = -1;
-    public DateTime? StartTime { get; set; } = DateTime.MinValue;
+    public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public TimeSpan Lunch { get; set; } = new TimeSpan(0, 30, 0);
     public TimeOnly LunchTimeCompleted { get; set; } = new TimeOnly(11, 45, 00);

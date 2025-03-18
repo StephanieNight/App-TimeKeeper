@@ -62,6 +62,12 @@
           return new string[0];
         }
       }
+      for(int i = 0;i<commands.Count; i++)
+      {
+        var command = commands[i];
+        command = command.ToLower();
+        commands[i] = command;
+      }
       return commands.ToArray();
     }
   }

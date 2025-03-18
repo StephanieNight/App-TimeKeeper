@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Globalization;
 using TimeKeeper.Models;
 
 namespace TimeKeeper
@@ -44,7 +43,7 @@ namespace TimeKeeper
         InputHandler();
       }
     }
-
+    // Main.
     static void InputHandler()
     {
       terminal.WriteLine("Ready for input");
@@ -123,14 +122,14 @@ namespace TimeKeeper
               {
                 // value is allready 0
               }
-              else if  (commands[2] == "1")
+              else if (commands[2] == "1")
               {
                 showWork = true;
               }
               else
               {
                 showWork = Boolean.Parse(commands[2]);
-              }                
+              }
               settings.ShowTotalWork = showWork;
             }
             break;
@@ -185,6 +184,11 @@ namespace TimeKeeper
                 TimeSpan lunchtime = TimeSpan.Parse(commands[2]);
                 calendar.SetDayLunch(lunchtime);
                 break;
+              case "-lt":
+              case "-lunchtime":
+                TimeSpan completed = TimeSpan.Parse(commands[2]);
+                calendar.SetDayLunchCompleted(completed);
+                break;
               default:
                 terminal.WriteLine($"Unknown tag {commands[1]}");
                 terminal.WriteLine("Valid tags: -[s]tart, -[e]nd, -[l]unch");
@@ -198,15 +202,6 @@ namespace TimeKeeper
         }
       }
     }
-
-    static void CurrentDomain_ProcessExit(object sender, EventArgs e)
-    {
-      terminal.WriteLine("Saving...");
-      calendar.Save();
-      SaveSettings();
-      terminal.WriteLine("Done");
-      Thread.Sleep(500);
-    }
     static void LoadSettings()
     {
       string settingsFileName = $"settings.json";
@@ -219,6 +214,16 @@ namespace TimeKeeper
     {
       filesystem.Serialize<Settings>("settings.json", settings);
     }
+    // Events.
+    static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+    {
+      terminal.WriteLine("Saving...");
+      calendar.Save();
+      SaveSettings();
+      terminal.WriteLine("Done");
+      Thread.Sleep(500);
+    }
+
     // Screens. 
     private static void MainScreen()
     {
@@ -382,7 +387,7 @@ namespace TimeKeeper
       }
     }
 
-    // Formating
+    // Formating.
     private static string FormatedActualWorkDay(DayModel day)
     {
       var worked = day.GetActualWorkDay();

@@ -226,24 +226,28 @@ namespace TimeKeeper
     }
     public void ClockOut(DateTime endDateTime)
     {
-      SetDayEnd(endDateTime);
-      UpdateDeficit();
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        day.EndTime = GetRoundedTime(endDateTime);
+        UpdateDeficit();
+      }
     }
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        day.StartTime = GetRoundedTime(startDatetime);
+        day.StartTime = startDatetime;
         UpdateDeficit();
       }
     }
-    public void SetDayEnd(DateTime endDatetime)
+    public void SetDayEnd(DateTime endDateTime)
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        day.EndTime = GetRoundedTime(endDatetime);
+        day.EndTime = endDateTime;
         UpdateDeficit();
       }
     }
@@ -256,9 +260,20 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
+    public void SetDayLunchCompleted(TimeSpan lunchTime)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        var to = TimeOnly.FromTimeSpan(lunchTime);
+        day.LunchTimeCompleted = to;
+        UpdateDeficit();
+      }
+    }
+
     private DateTime GetRoundedTime(DateTime dateTime)
     {
-      if(Rounding == Rounding.None)
+      if (Rounding == Rounding.None)
       {
         return dateTime;
       }
@@ -286,7 +301,7 @@ namespace TimeKeeper
         YearModel year = filesystem.Deserialize<YearModel>(yearFile);
         Years.Add(year.Id, year);
       }
-    }    
+    }
     public void LoadMonths()
     {
       if (IsYearActive())
