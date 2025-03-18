@@ -26,7 +26,7 @@ namespace TimeKeeper
 
       filesystem = new FileHandler(settings.DataLocation);
       terminal = new TerminalHandler();
-      calendar = new CalendarHandler(filesystem);
+      calendar = new CalendarHandler(filesystem,settings.ExpectedWorkWeek);
 
       LoadSettings();
 
@@ -300,7 +300,7 @@ namespace TimeKeeper
               terminal.WriteLine($"Lunch Ended    :  {day.LunchTimeCompleted.ToString("hh:mm:ss")}");
             }
             terminal.Seperator();
-            terminal.WriteLine($"Expected work  :  {day.GetExpectedWorkDay()}");
+            terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
             terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
           }
@@ -398,7 +398,7 @@ namespace TimeKeeper
     {
       var worked = day.GetActualWorkDay();
       string formated = "";
-      if (worked > day.GetExpectedWorkDay())
+      if (worked > day.ExpectedWorkDay)
       {
         formated += "+";
       }

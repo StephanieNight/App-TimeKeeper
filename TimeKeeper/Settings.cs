@@ -8,6 +8,7 @@ namespace TimeKeeper
     public Rounding Rounding { get; set; } = Rounding.None;
     public bool ShowDeficit { get; set; }
     public bool ShowTotalWork { get; set; }
+    public Dictionary<DayOfWeek,TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
     public string DataLocation
     {
       get
@@ -23,5 +24,6 @@ namespace TimeKeeper
         return "";
       }
     }
+
   }
 }
