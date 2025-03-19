@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TimeKeeper
+﻿namespace TimeKeeper
 {
   static class DateTimeExtensions
   {
@@ -29,8 +23,5 @@ namespace TimeKeeper
 
       return new DateTime(dt.Ticks + offset - delta, dt.Kind);
     }
-
-
-
   }
 }

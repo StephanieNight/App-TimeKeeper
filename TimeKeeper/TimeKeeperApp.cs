@@ -11,9 +11,9 @@ namespace TimeKeeper
   /// </summary>
   internal class TimeKeeperApp
   {
-    static FileHandler filesystem = new FileHandler("TimeKeeper");
-    static TerminalHandler terminal = new TerminalHandler();
-    static CalendarHandler calendar = new CalendarHandler(filesystem);
+    static FileHandler filesystem;
+    static TerminalHandler terminal;
+    static CalendarHandler calendar;
     static Settings settings = new Settings();
     static bool isRunning = true;
 
@@ -21,9 +21,15 @@ namespace TimeKeeper
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
-      Console.SetWindowSize(44, 20);
+      //Console.SetWindowSize(44, 20);
+
+      filesystem = new FileHandler(settings.DataLocation);
 
       LoadSettings();
+
+      terminal = new TerminalHandler();
+      calendar = new CalendarHandler(filesystem, settings.ExpectedWorkWeek);
+
       calendar.SetRounding(settings.Rounding);
       terminal.WriteLine($"Welcome {settings.KeeperName}");
       terminal.Seperator();
@@ -132,27 +138,49 @@ namespace TimeKeeper
               }
               settings.ShowTotalWork = showWork;
             }
+            SaveSettings();
             break;
           case "checkin":
           case "clockin":
             calendar.ClockIn(DateTime.Now);
+            calendar.Save();
             break;
           case "checkout":
           case "clockout":
             calendar.ClockOut(DateTime.Now);
+            calendar.Save();
             break;
           case "days":
             if (commands.Length == 1)
             {
               StatusForActiveMonth();
+              InputHandler();
+              break;
             }
-            else if (commands[1].ToLower() == "-limit" ||
-                commands[1].ToLower() == "-l")
+            if (commands[1] == "-limit" ||
+                commands[1] == "-l")
             {
               int l = Int32.Parse(commands[2]);
               StatusForActiveMonth(l);
+              InputHandler();
+              break;
             }
-            InputHandler();
+            if (commands[1] == "-expectedworkday" ||
+                commands[1] == "-ew")
+              if (commands.Length == 4)
+              {
+                TimeSpan ew = TimeSpan.Parse(commands[2]);
+                int d = Int32.Parse(commands[3]);
+                DayOfWeek wd = (DayOfWeek)d;
+
+                calendar.SetExpectedWorkDay(wd, ew);
+                if (settings.ExpectedWorkWeek.ContainsKey(wd))
+                {
+                  settings.ExpectedWorkWeek[wd] = ew;
+                  break;
+                }
+                settings.ExpectedWorkWeek.Add(wd, ew);
+              }
             break;
           case "day":
             if (commands[1].ToLower() == "-get" ||
@@ -189,11 +217,21 @@ namespace TimeKeeper
                 TimeSpan completed = TimeSpan.Parse(commands[2]);
                 calendar.SetDayLunchCompleted(completed);
                 break;
+              case "-expectedworkday":
+              case "-ew":
+                if (commands.Length == 3)
+                {
+                  TimeSpan ew = TimeSpan.Parse(commands[2]);
+                  calendar.SetDayExpectedWorkDay(ew);
+                }
+                break;
               default:
                 terminal.WriteLine($"Unknown tag {commands[1]}");
                 terminal.WriteLine("Valid tags: -[s]tart, -[e]nd, -[l]unch");
                 break;
             }
+            // Save changes to disk.
+            calendar.Save();
             break;
           default:
             terminal.WriteLine($"Unknown Command {commands[0]}");
@@ -207,7 +245,7 @@ namespace TimeKeeper
       string settingsFileName = $"settings.json";
       if (filesystem.FileExists(settingsFileName))
       {
-        settings = filesystem.Deserialize<Settings>($"{filesystem.BasePath}/{settingsFileName}");
+        settings = filesystem.Deserialize<Settings>(settingsFileName, true);
       }
     }
     static void SaveSettings()
@@ -294,7 +332,7 @@ namespace TimeKeeper
               terminal.WriteLine($"Lunch Ended    :  {day.LunchTimeCompleted.ToString("hh:mm:ss")}");
             }
             terminal.Seperator();
-            terminal.WriteLine($"Expected work  :  {day.GetExpectedWorkDay()}");
+            terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
             terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
           }
@@ -392,7 +430,7 @@ namespace TimeKeeper
     {
       var worked = day.GetActualWorkDay();
       string formated = "";
-      if (worked > day.GetExpectedWorkDay())
+      if (worked > day.ExpectedWorkDay)
       {
         formated += "+";
       }
@@ -412,4 +450,5 @@ namespace TimeKeeper
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
     }
   }
+
 }
