@@ -1,4 +1,4 @@
-﻿using TimeKeeper.Models;
+using TimeKeeper.Models;
 
 namespace TimeKeeper
 {
