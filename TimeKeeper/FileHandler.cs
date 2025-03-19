@@ -1,43 +1,62 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace TimeKeeper
 {
   class FileHandler
   {
-    public string AppName { get; set; }
     public string BasePath { get; set; }
-    public FileHandler(string appName)
+    public FileHandler(string basePath)
     {
-      AppName = appName;
-      this.BasePath = $"C://{AppName}";
-      if (Directory.Exists(BasePath) == false)
+      BasePath = basePath;
+      InitializeFolder(basePath);
+    }
+    public void InitializeFolder(string directory)
+    {
+      if (Directory.Exists(directory) == false)
       {
-        Directory.CreateDirectory(BasePath);
+        Directory.CreateDirectory(directory);
       }
     }
-    public bool FileExists(string fileName)
+    public bool FileExists(string fileName, bool includeBasePath = true)
     {
-      return File.Exists($"{BasePath}/{fileName}");
+      if (includeBasePath)
+        return File.Exists($"{BasePath}/{fileName}");
+      return File.Exists($"{fileName}");
     }
-    public void Serialize<T>(string path, T obj)
+    public bool DirectoryExists(string directory, bool includeBasePath = true)
+    {
+      if (includeBasePath)
+        return Directory.Exists($"{BasePath}/{directory}");
+      return Directory.Exists($"{directory}");
+    }
+    public void Serialize<T>(string path, T obj, bool includeBasePath = true)
     {
       var options = new JsonSerializerOptions
       {
         IgnoreReadOnlyProperties = true,
         WriteIndented = true
       };
-      string jsonSerial = JsonSerializer.Serialize<T>(obj,options);
-      string fullpath = $"{BasePath}/{path}";
+      string jsonSerial = JsonSerializer.Serialize<T>(obj, options);
 
-      if (Directory.Exists(Path.GetDirectoryName(fullpath)) == false)
+      if (includeBasePath)
       {
-        Directory.CreateDirectory(Path.GetDirectoryName(fullpath));
+        path = $"{BasePath}/{path}";
       }
 
-      File.WriteAllText(fullpath, jsonSerial);
+      if (Directory.Exists(Path.GetDirectoryName(path)) == false)
+      {
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+      }
+
+      File.WriteAllText(path, jsonSerial);
     }
-    public T Deserialize<T>(string path)
+    public T Deserialize<T>(string path, bool includeBasePath = false)
     {
+      if (includeBasePath)
+      {
+        path = $"{BasePath}/{path}";
+      }
+
       // Open the text file using a stream reader.
       using StreamReader reader = new(path);
 
@@ -48,7 +67,11 @@ namespace TimeKeeper
     public string[] GetFilesInFolder(string folder)
     {
       var fullpath = $"{BasePath}/{folder}";
-      return Directory.GetFiles(fullpath);
+      if (DirectoryExists(fullpath, false))
+      {
+        return Directory.GetFiles(fullpath);
+      }
+      return new string[0];
     }
   }
 }

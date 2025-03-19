@@ -1,9 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Text.Json;
 using TimeKeeper.Models;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace TimeKeeper
 {
@@ -20,9 +15,18 @@ namespace TimeKeeper
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
-    public CalendarHandler(FileHandler filehandler)
+    Dictionary<DayOfWeek, TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
+
+    public CalendarHandler(FileHandler filehandler, Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
     {
       filesystem = filehandler;
+      filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
+
+      // Load saved expected work week into dictionary.
+      foreach (var work in expectedWorkWeek)
+      {
+        ExpectedWorkWeek.Add(work.Key, work.Value);
+      }
     }
 
     public List<DayModel> GetDays()
@@ -60,6 +64,31 @@ namespace TimeKeeper
         }
       }
       return DaysNotCompleted;
+    }
+
+    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
+      if(ExpectedWorkWeek.ContainsKey(dayOfWeek)){
+        return ExpectedWorkWeek[dayOfWeek];
+      }
+      return GetDefaultExpectedWorkDay(dayOfWeek);
+    }
+    public TimeSpan GetDefaultExpectedWorkDay(DayOfWeek dayOfWeek)
+    {
+      switch (dayOfWeek)
+      {
+        case DayOfWeek.Monday:
+        case DayOfWeek.Tuesday:
+        case DayOfWeek.Wednesday:
+        case DayOfWeek.Thursday:
+          return new TimeSpan(7, 30, 0);
+        case DayOfWeek.Friday:
+          return new TimeSpan(7, 0, 0);
+        case DayOfWeek.Saturday:
+        case DayOfWeek.Sunday:
+          return new TimeSpan(0, 0, 0);
+        default:
+          return new TimeSpan(0, 0, 0);
+      }
     }
 
     public bool IsYearActive()
@@ -217,7 +246,9 @@ namespace TimeKeeper
         if (Years[ActiveYearId].GetMonth(ActiveMonthId).ContainDayId(startDateTime.Day) == false)
         {
           DayModel day = new DayModel();
-          day.StartTime = GetRoundedTime(startDateTime);
+          var startTime = GetRoundedTime(startDateTime);
+          day.StartTime = startTime;
+          day.ExpectedWorkDay = GetExpectedWorkDay(startTime.DayOfWeek);
           day.Id = startDateTime.Day;
           AddDay(day, true);
         }
@@ -226,24 +257,28 @@ namespace TimeKeeper
     }
     public void ClockOut(DateTime endDateTime)
     {
-      SetDayEnd(endDateTime);
-      UpdateDeficit();
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        day.EndTime = GetRoundedTime(endDateTime);
+        UpdateDeficit();
+      }
     }
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        day.StartTime = GetRoundedTime(startDatetime);
+        day.StartTime = startDatetime;
         UpdateDeficit();
       }
     }
-    public void SetDayEnd(DateTime endDatetime)
+    public void SetDayEnd(DateTime endDateTime)
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        day.EndTime = GetRoundedTime(endDatetime);
+        day.EndTime = endDateTime;
         UpdateDeficit();
       }
     }
@@ -256,9 +291,29 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
+    public void SetDayLunchCompleted(TimeSpan lunchTime)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        var to = TimeOnly.FromTimeSpan(lunchTime);
+        day.LunchTimeCompleted = to;
+        UpdateDeficit();
+      }
+    }
+    public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        day.ExpectedWorkDay = expectedWorkDay;
+        UpdateDeficit();
+      }
+    }
+
     private DateTime GetRoundedTime(DateTime dateTime)
     {
-      if(Rounding == Rounding.None)
+      if (Rounding == Rounding.None)
       {
         return dateTime;
       }
@@ -273,6 +328,16 @@ namespace TimeKeeper
         year.UpdateStatus();
       }
     }
+
+    public void SetExpectedWorkDay(DayOfWeek dayOfWeek, TimeSpan timeSpan)
+    {
+      if (ExpectedWorkWeek.ContainsKey(dayOfWeek))
+      {
+        ExpectedWorkWeek[dayOfWeek] = timeSpan;
+        return;
+      }
+      ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
+    }
     public void SetRounding(Rounding rounding)
     {
       Rounding = rounding;
@@ -286,7 +351,7 @@ namespace TimeKeeper
         YearModel year = filesystem.Deserialize<YearModel>(yearFile);
         Years.Add(year.Id, year);
       }
-    }    
+    }
     public void LoadMonths()
     {
       if (IsYearActive())
@@ -307,9 +372,15 @@ namespace TimeKeeper
         foreach (var dayfile in files)
         {
           DayModel day = filesystem.Deserialize<DayModel>(dayfile);
+          // Backward compatability for adding Index
           if (day.Id == -1)
           {
             day.Id = Int32.Parse(Path.GetFileNameWithoutExtension(dayfile));
+          }
+          // Backward compatability for exprected workday not being configuratble.
+          if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
+          {
+            day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
           }
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
