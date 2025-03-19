@@ -138,6 +138,7 @@ namespace TimeKeeper
               }
               settings.ShowTotalWork = showWork;
             }
+            SaveSettings();
             break;
           case "checkin":
           case "clockin":
