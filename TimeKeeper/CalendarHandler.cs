@@ -1,9 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Text.Json;
-using TimeKeeper.Models;
-using static System.Net.Mime.MediaTypeNames;
+﻿using TimeKeeper.Models;
 
 namespace TimeKeeper
 {
