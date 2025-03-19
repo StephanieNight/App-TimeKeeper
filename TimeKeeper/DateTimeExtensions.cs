@@ -23,8 +23,5 @@
 
       return new DateTime(dt.Ticks + offset - delta, dt.Kind);
     }
-
-
-
   }
 }

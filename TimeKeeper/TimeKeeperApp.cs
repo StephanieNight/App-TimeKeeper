@@ -172,7 +172,7 @@ namespace TimeKeeper
                 TimeSpan ew = TimeSpan.Parse(commands[2]);
                 int d = Int32.Parse(commands[3]);
                 DayOfWeek wd = (DayOfWeek)d;
-                                
+
                 calendar.SetExpectedWorkDay(wd, ew);
                 if (settings.ExpectedWorkWeek.ContainsKey(wd))
                 {
@@ -220,7 +220,7 @@ namespace TimeKeeper
               case "-expectedworkday":
               case "-ew":
                 if (commands.Length == 3)
-                {                  
+                {
                   TimeSpan ew = TimeSpan.Parse(commands[2]);
                   calendar.SetDayExpectedWorkDay(ew);
                 }

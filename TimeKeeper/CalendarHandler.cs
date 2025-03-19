@@ -66,8 +66,10 @@ namespace TimeKeeper
       return DaysNotCompleted;
     }
 
-    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
-      if(ExpectedWorkWeek.ContainsKey(dayOfWeek)){
+    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek)
+    {
+      if (ExpectedWorkWeek.ContainsKey(dayOfWeek))
+      {
         return ExpectedWorkWeek[dayOfWeek];
       }
       return GetDefaultExpectedWorkDay(dayOfWeek);
