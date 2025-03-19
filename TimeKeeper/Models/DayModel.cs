@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace TimeKeeper.Models
 {
@@ -8,7 +7,7 @@ namespace TimeKeeper.Models
     public int Id { get; set; } = -1;
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public TimeSpan ExpectedWorkDay {get; set;}
+    public TimeSpan ExpectedWorkDay { get; set; }
     public TimeSpan Lunch { get; set; } = new TimeSpan(0, 30, 0);
     public TimeOnly LunchTimeCompleted { get; set; } = new TimeOnly(11, 45, 00);
     [JsonIgnore]
@@ -24,12 +23,9 @@ namespace TimeKeeper.Models
     {
       get
       {
-        if (StartTime.HasValue)
+        if (StartTime.HasValue && TimeOnly.FromDateTime(StartTime.Value) > LunchTimeCompleted)
         {
-          if (TimeOnly.FromDateTime(StartTime.Value) > LunchTimeCompleted)
-          {
-              return false;
-          }
+          return false;
         }
         else if (EndTime.HasValue)
         {
@@ -38,7 +34,7 @@ namespace TimeKeeper.Models
         return TimeOnly.FromDateTime(DateTime.Now) > LunchTimeCompleted;
       }
     }
-  
+
     public TimeSpan GetActualWorkDay()
     {
       TimeSpan work = DateTime.Now - StartTime.Value;
