@@ -138,14 +138,17 @@ namespace TimeKeeper
               }
               settings.ShowTotalWork = showWork;
             }
+            SaveSettings();
             break;
           case "checkin":
           case "clockin":
             calendar.ClockIn(DateTime.Now);
+            calendar.Save();
             break;
           case "checkout":
           case "clockout":
             calendar.ClockOut(DateTime.Now);
+            calendar.Save();
             break;
           case "days":
             if (commands.Length == 1)
@@ -179,8 +182,6 @@ namespace TimeKeeper
                 settings.ExpectedWorkWeek.Add(wd, ew);
               }
             break;
-
-
           case "day":
             if (commands[1].ToLower() == "-get" ||
                 commands[1].ToLower() == "-g")
@@ -229,6 +230,8 @@ namespace TimeKeeper
                 terminal.WriteLine("Valid tags: -[s]tart, -[e]nd, -[l]unch");
                 break;
             }
+            // Save changes to disk.
+            calendar.Save();
             break;
           default:
             terminal.WriteLine($"Unknown Command {commands[0]}");
