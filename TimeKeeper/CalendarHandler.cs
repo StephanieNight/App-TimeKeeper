@@ -310,7 +310,7 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
-    public void ToggleBreak()
+    public void ToggleBreak(string name = "break")
     {
       if (IsDayActive())
       {
@@ -322,7 +322,7 @@ namespace TimeKeeper
         }
         else
         {
-          day.StartBreak(GetRoundedTime(DateTime.Now));
+          day.StartBreak(GetRoundedTime(DateTime.Now),name);
         }
       }
     }

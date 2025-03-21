@@ -67,7 +67,10 @@ namespace TimeKeeper
             terminal.WaitForKeypress();
             break;
           case "break":
-            calendar.ToggleBreak();
+            if (commands.Length == 2)
+              calendar.ToggleBreak(commands[1]);
+            else
+              calendar.ToggleBreak();
             break;
           case "settings":
             if (commands[1].ToLower() == "-keeper" ||
@@ -329,27 +332,41 @@ namespace TimeKeeper
             terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
+            if (day.IsOnBreak)
+            {
+              terminal.WriteLine($"Staus          :  IS ON BREAK!");
+            }
             terminal.Seperator();
 
             // Breaks
             if (day.Breaks.Count > 0)
             {
-              terminal.Write($"Breaks         :  ");
-              for (int i = 0; i < day.Breaks.Count; i++)
-              {
-                var dayBreak = day.Breaks[i];
-                if (i == 0)
-                {
-                  terminal.WriteLine($"{dayBreak.Duration()} {dayBreak.Name}");
-                }
-                else 
-                { 
-                  terminal.WriteLine($"               :  {dayBreak.Duration()} {dayBreak.Name}"); 
-                }
+              if (day.Breaks.Count == 1 && day.IsOnBreak)
+              { // do not print when on break and no breaks ready.
               }
-              terminal.Seperator();
+              else
+              {
+                terminal.Write($"Breaks         :  ");
+                for (int i = 0; i < day.Breaks.Count; i++)
+                {
+                  var dayBreak = day.Breaks[i];
+                  if (dayBreak.IsCompleted == false)
+                  {
+                    // Skip non completed breaks.
+                    continue;
+                  }
+                  if (i == 0)
+                  {
+                    terminal.WriteLine($"{dayBreak.Duration().ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                  }
+                  else
+                  {
+                    terminal.WriteLine($"               :  {dayBreak.Duration().ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                  }
+                }
+                terminal.Seperator();
+              }
             }
-
             terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
             terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
