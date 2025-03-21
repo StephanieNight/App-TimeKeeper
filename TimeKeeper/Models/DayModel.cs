@@ -8,8 +8,10 @@ namespace TimeKeeper.Models
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public TimeSpan ExpectedWorkDay { get; set; }
-    public TimeSpan Lunch { get; set; } = new TimeSpan(0, 30, 0);
-    public TimeOnly LunchTimeCompleted { get; set; } = new TimeOnly(11, 45, 00);
+    public TimeSpan Lunch { get; set; } 
+    public TimeOnly LunchTimeCompleted { get; set; } 
+    public List<BreakModel> Breaks { get; set; } = new List<BreakModel>();
+
     [JsonIgnore]
     public bool IsComplete
     {
@@ -34,7 +36,62 @@ namespace TimeKeeper.Models
         return TimeOnly.FromDateTime(DateTime.Now) > LunchTimeCompleted;
       }
     }
+    [JsonIgnore]
+    public bool IsOnBreak
+    {
+      get
+      {
+        foreach (var b in Breaks)
+        {
+          if (b.IsCompleted == false)
+          {
+            return true;
+          }
+        }
+        return false;
+      }
+    }
 
+    // breaks
+    public void StartBreak(DateTime startTime, string name = "break")
+    {
+      foreach (var b in Breaks)
+      {
+        if (b.IsCompleted == false)
+        {
+          return;
+        }
+      }
+      var newBreak = new BreakModel();
+      newBreak.Name = name;
+      newBreak.StartTime = startTime;
+      Breaks.Add(newBreak);
+    }
+    public void EndBreak(DateTime endTime)
+    {
+      foreach (var b in Breaks)
+      {
+        if (b.IsCompleted == false)
+        {
+          b.EndTime = endTime;
+          return;
+        }
+      }
+    }
+
+    // Time Spans
+    public TimeSpan GetTotalBreaksSpan()
+    {
+      TimeSpan duration = new TimeSpan();
+      foreach (var b in Breaks)
+      {
+        if (b.IsCompleted)
+        {
+          duration += b.Duration();
+        }
+      }
+      return duration;
+    }
     public TimeSpan GetActualWorkDay()
     {
       TimeSpan work = DateTime.Now - StartTime.Value;
@@ -42,10 +99,7 @@ namespace TimeKeeper.Models
       {
         work = EndTime.Value - StartTime.Value;
       }
-      if (IsLunchComplete)
-      {
-        work -= Lunch;
-      }
+      work -= GetTotalBreaksSpan();
       return work;
     }
     public TimeSpan GetDeficit()

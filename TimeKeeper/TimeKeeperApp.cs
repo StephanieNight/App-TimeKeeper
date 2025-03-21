@@ -66,6 +66,9 @@ namespace TimeKeeper
             DebugScreen();
             terminal.WaitForKeypress();
             break;
+          case "break":
+            calendar.ToggleBreak();
+            break;
           case "settings":
             if (commands[1].ToLower() == "-keeper" ||
                 commands[1].ToLower() == "-k")
@@ -172,7 +175,7 @@ namespace TimeKeeper
                 TimeSpan ew = TimeSpan.Parse(commands[2]);
                 int d = Int32.Parse(commands[3]);
                 DayOfWeek wd = (DayOfWeek)d;
-                                
+
                 calendar.SetExpectedWorkDay(wd, ew);
                 if (settings.ExpectedWorkWeek.ContainsKey(wd))
                 {
@@ -220,7 +223,7 @@ namespace TimeKeeper
               case "-expectedworkday":
               case "-ew":
                 if (commands.Length == 3)
-                {                  
+                {
                   TimeSpan ew = TimeSpan.Parse(commands[2]);
                   calendar.SetDayExpectedWorkDay(ew);
                 }
@@ -322,16 +325,31 @@ namespace TimeKeeper
             DayModel day = calendar.GetActiveDay();
             currentDate = currentDate.AddDays(day.Id - 1);
             terminal.WriteLine($"Active day     :  [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
+            terminal.Seperator();
             terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-
-            if (day.IsLunchComplete)
-            {
-              terminal.WriteLine($"Lunch          :  {day.Lunch.ToString()}");
-              terminal.WriteLine($"Lunch Ended    :  {day.LunchTimeCompleted.ToString("hh:mm:ss")}");
-            }
             terminal.Seperator();
+
+            // Breaks
+            if (day.Breaks.Count > 0)
+            {
+              terminal.Write($"Breaks         :  ");
+              for (int i = 0; i < day.Breaks.Count; i++)
+              {
+                var dayBreak = day.Breaks[i];
+                if (i == 0)
+                {
+                  terminal.WriteLine($"{dayBreak.Duration()} {dayBreak.Name}");
+                }
+                else 
+                { 
+                  terminal.WriteLine($"               :  {dayBreak.Duration()} {dayBreak.Name}"); 
+                }
+              }
+              terminal.Seperator();
+            }
+
             terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
             terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");

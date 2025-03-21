@@ -310,7 +310,22 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
-
+    public void ToggleBreak()
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        if (day.IsOnBreak)
+        {
+          day.EndBreak(GetRoundedTime(DateTime.Now));
+          UpdateDeficit();
+        }
+        else
+        {
+          day.StartBreak(GetRoundedTime(DateTime.Now));
+        }
+      }
+    }
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Rounding == Rounding.None)
@@ -381,7 +396,24 @@ namespace TimeKeeper
           if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
           {
             day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
+          }         
+          // Move lunch to breaks
+          if(day.Lunch.TotalSeconds > 0)
+          {
+            DateTime lunchEnd = new DateTime(DateOnly.FromDateTime(day.StartTime.Value), day.LunchTimeCompleted);
+            DateTime lunchStart = lunchEnd - day.Lunch;
+
+            var dayBreak = new BreakModel();
+            dayBreak.Name = "Lunch";
+            dayBreak.StartTime = lunchStart;
+            dayBreak.EndTime = lunchEnd;
+
+            day.Breaks.Add(dayBreak);
+
+            day.Lunch = new TimeSpan();
+            day.LunchTimeCompleted = new TimeOnly();
           }
+
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
       }
