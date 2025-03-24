@@ -8,8 +8,6 @@ namespace TimeKeeper.Models
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public TimeSpan ExpectedWorkDay { get; set; }
-    public TimeSpan Lunch { get; set; } 
-    public TimeOnly LunchTimeCompleted { get; set; } 
     public List<BreakModel> Breaks { get; set; } = new List<BreakModel>();
 
     [JsonIgnore]
@@ -18,22 +16,6 @@ namespace TimeKeeper.Models
       get
       {
         return StartTime.HasValue && EndTime.HasValue;
-      }
-    }
-    [JsonIgnore]
-    public bool IsLunchComplete
-    {
-      get
-      {
-        if (StartTime.HasValue && TimeOnly.FromDateTime(StartTime.Value) > LunchTimeCompleted)
-        {
-          return false;
-        }
-        else if (EndTime.HasValue)
-        {
-          return TimeOnly.FromDateTime(EndTime.Value) > LunchTimeCompleted;
-        }
-        return TimeOnly.FromDateTime(DateTime.Now) > LunchTimeCompleted;
       }
     }
     [JsonIgnore]
