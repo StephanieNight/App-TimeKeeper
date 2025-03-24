@@ -66,11 +66,15 @@ namespace TimeKeeper
             DebugScreen();
             terminal.WaitForKeypress();
             break;
+          case "update":
+            calendar.UpdateDeficit();
+            break;
           case "break":
             if (commands.Length == 2)
               calendar.ToggleBreak(commands[1]);
             else
               calendar.ToggleBreak();
+            calendar.Save();
             break;
           case "settings":
             if (commands[1].ToLower() == "-keeper" ||
@@ -213,16 +217,6 @@ namespace TimeKeeper
                 DateTime enddateTime = DateTime.Parse(commands[2]);
                 calendar.SetDayEnd(enddateTime);
                 break;
-              case "-l":
-              case "-lunch":
-                TimeSpan lunchtime = TimeSpan.Parse(commands[2]);
-                calendar.SetDayLunch(lunchtime);
-                break;
-              case "-lt":
-              case "-lunchtime":
-                TimeSpan completed = TimeSpan.Parse(commands[2]);
-                calendar.SetDayLunchCompleted(completed);
-                break;
               case "-expectedworkday":
               case "-ew":
                 if (commands.Length == 3)
@@ -275,8 +269,8 @@ namespace TimeKeeper
       if (incompleteDays.Count > 0)
       {
         if (incompleteDays.Count == 1 &&
-           incompleteDays[0].StartTime.HasValue &&
-           incompleteDays[0].StartTime.Value.Date == DateTime.Now.Date)
+            incompleteDays[0].StartTime.HasValue &&
+            incompleteDays[0].StartTime.Value.Date == DateTime.Now.Date)
         {
           // Do nothing this is expected for the current date to not be complete.
         }
@@ -419,10 +413,17 @@ namespace TimeKeeper
           terminal.WriteLine($"    - Days loaded: {days.Count}");
           foreach (DayModel day in days)
           {
-            terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.GetDeficit())}");
-            dayDeficit += day.GetDeficit();
-            terminal.WriteLine($"                Total : {FormatedTimeSpan(dayDeficit)}");
+            if (day.IsComplete)
+            {
+              terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.GetDeficit())}");
+              dayDeficit += day.GetDeficit();
+            }
+            else
+            {
+              terminal.WriteLine($"       - [{day.Id:00}] Deficit : 00:00:00");
+            }
           }
+          terminal.WriteLine($"              - Total : {FormatedTimeSpan(dayDeficit)}");
           terminal.WriteLine($"    - Month Deficit   : {FormatedTimeSpan(month.Deficit)}");
           terminal.WriteLine($"    - counted Deficit : {FormatedTimeSpan(dayDeficit)}");
 

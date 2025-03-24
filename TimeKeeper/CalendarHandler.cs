@@ -282,25 +282,25 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
-    public void SetDayLunch(TimeSpan lunchTime)
-    {
-      if (IsDayActive())
-      {
-        DayModel day = GetActiveDay();
-        day.Lunch = lunchTime;
-        UpdateDeficit();
-      }
-    }
-    public void SetDayLunchCompleted(TimeSpan lunchTime)
-    {
-      if (IsDayActive())
-      {
-        DayModel day = GetActiveDay();
-        var to = TimeOnly.FromTimeSpan(lunchTime);
-        day.LunchTimeCompleted = to;
-        UpdateDeficit();
-      }
-    }
+    //public void SetDayLunch(TimeSpan lunchTime)
+    //{
+    //  if (IsDayActive())
+    //  {
+    //    DayModel day = GetActiveDay();
+    //    day.Lunch = lunchTime;
+    //    UpdateDeficit();
+    //  }
+    //}
+    //public void SetDayLunchCompleted(TimeSpan lunchTime)
+    //{
+    //  if (IsDayActive())
+    //  {
+    //    DayModel day = GetActiveDay();
+    //    var to = TimeOnly.FromTimeSpan(lunchTime);
+    //    day.LunchTimeCompleted = to;
+    //    UpdateDeficit();
+    //  }
+    //}
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -357,7 +357,6 @@ namespace TimeKeeper
     {
       Rounding = rounding;
     }
-
     public void LoadYears()
     {
       var files = filesystem.GetFilesInFolder($"{PathsData}");
@@ -397,23 +396,6 @@ namespace TimeKeeper
           {
             day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
           }         
-          // Move lunch to breaks
-          if(day.Lunch.TotalSeconds > 0)
-          {
-            DateTime lunchEnd = new DateTime(DateOnly.FromDateTime(day.StartTime.Value), day.LunchTimeCompleted);
-            DateTime lunchStart = lunchEnd - day.Lunch;
-
-            var dayBreak = new BreakModel();
-            dayBreak.Name = "Lunch";
-            dayBreak.StartTime = lunchStart;
-            dayBreak.EndTime = lunchEnd;
-
-            day.Breaks.Add(dayBreak);
-
-            day.Lunch = new TimeSpan();
-            day.LunchTimeCompleted = new TimeOnly();
-          }
-
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
       }
