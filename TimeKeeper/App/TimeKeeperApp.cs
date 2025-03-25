@@ -2,6 +2,7 @@ using System.Diagnostics;
 using TimeKeeper.App.Models;
 using TimeKeeper.App.Enums;
 using TimeKeeper.App.Handlers;
+using System.Runtime.InteropServices;
 
 namespace TimeKeeper.App
 {
@@ -18,6 +19,22 @@ namespace TimeKeeper.App
     CalendarHandler calendar;
     Settings settings = new Settings();
     bool isRunning = true;
+
+    public string DataLocation
+    {
+      get
+      {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+          return $"{Environment.GetEnvironmentVariable("HOME")}/.timeKeeper";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+          return $"C://TimeKeeper";
+        }
+        return "";
+      }
+    }
 
     // Start
     public void Main()

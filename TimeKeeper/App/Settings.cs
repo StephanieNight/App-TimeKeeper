@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+
 using TimeKeeper.App.Enums;
 
 namespace TimeKeeper.App
@@ -10,20 +10,5 @@ namespace TimeKeeper.App
     public bool ShowDeficit { get; set; }
     public bool ShowTotalWork { get; set; }
     public Dictionary<DayOfWeek,TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
-    public string DataLocation
-    {
-      get
-      {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-          return $"{Environment.GetEnvironmentVariable("HOME")}/.timeKeeper";
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-          return $"C://TimeKeeper";
-        }
-        return "";
-      }
-    }
   }
 }
