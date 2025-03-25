@@ -1,4 +1,4 @@
-namespace TimeKeeper
+namespace TimeKeeper.App.Extensions
 {
   static class DateTimeExtensions
   {

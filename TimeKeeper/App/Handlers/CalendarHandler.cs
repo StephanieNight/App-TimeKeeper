@@ -1,6 +1,8 @@
-using TimeKeeper.Models;
+using TimeKeeper.App.Models;
+using TimeKeeper.App.Enums;
+using TimeKeeper.App.Extensions;
 
-namespace TimeKeeper
+namespace TimeKeeper.App.Handlers
 {
   class CalendarHandler
   {

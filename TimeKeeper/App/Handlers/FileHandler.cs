@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace TimeKeeper
+namespace TimeKeeper.App.Handlers
 {
   class FileHandler
   {
