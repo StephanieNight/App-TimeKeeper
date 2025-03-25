@@ -1,4 +1,4 @@
-﻿namespace TimeKeeper.Models
+﻿namespace TimeKeeper.App.Models
 {
   class BreakModel
   {

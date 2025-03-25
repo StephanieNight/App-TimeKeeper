@@ -1,17 +1,19 @@
-namespace TimeKeeper
+
+namespace TimeKeeper.App.Handlers
 {
   class TerminalHandler
   {
+
     private void ClearInputBuffer()
     {
       while (Console.KeyAvailable)
         Console.ReadKey(false); // skips previous input chars
     }
     public void WaitForKeypress()
-    {     
+    {
       Console.ReadKey();
     }
-   
+
     public string GetInput()
     {
       return Console.ReadLine();
@@ -37,7 +39,7 @@ namespace TimeKeeper
       List<string> commands = new List<string>();
       string current = "";
       bool isParameter = false;
-      foreach(char c in fullstring)
+      foreach (char c in fullstring)
       {
         // Check for a split and add the command to the new 
         if (c == ' ' && isParameter == false)
@@ -51,18 +53,18 @@ namespace TimeKeeper
           // toggle parameter
           isParameter = !isParameter;
           continue;
-        }  
+        }
         current += c;
       }
       commands.Add(current);
-      if(commands.Count == 1)
+      if (commands.Count == 1)
       {
         if (commands[0] == "")
         {
           return new string[0];
         }
       }
-      for(int i = 0;i<commands.Count; i++)
+      for (int i = 0; i < commands.Count; i++)
       {
         var command = commands[i];
         command = command.ToLower();
@@ -71,5 +73,5 @@ namespace TimeKeeper
       return commands.ToArray();
     }
   }
-}
 
+}
