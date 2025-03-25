@@ -41,27 +41,32 @@ namespace TimeKeeper.App
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
-      //Console.SetWindowSize(44, 20);
-
-      filesystem = new FileHandler(settings.DataLocation);
-
-      LoadSettings();
-
+      // Initialize Manager
+      filesystem = new FileHandler(DataLocation);
       terminal = new TerminalHandler();
-      calendar = new CalendarHandler(filesystem, settings.ExpectedWorkWeek);
+      calendar = new CalendarHandler(filesystem);
 
+      // Initialize
+      LoadCommands();
+
+      // Load Files and settings
+      LoadSettings();
+      calendar.LoadYears();
+      calendar.ActivateToday();
       calendar.SetRounding(settings.Rounding);
+      calendar.AddExpectedWorkWeek(settings.ExpectedWorkWeek);
+
+      // Write welcome screen
       terminal.WriteLine($"Welcome {settings.KeeperName}");
       terminal.Seperator();
       terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
       terminal.Seperator();
-      calendar.LoadYears();
-      calendar.ActivateToday();
       terminal.WriteLine($"Loaded {calendar.GetDays().Count} days");
       terminal.WriteLine($"{calendar.GetIncomplteDays().Count} is incomplete");
       terminal.Seperator();
       Thread.Sleep(1500);
 
+      // Main Loop
       while (isRunning)
       {
         terminal.Clear();
@@ -284,7 +289,11 @@ namespace TimeKeeper.App
     {
       filesystem.Serialize<Settings>("settings.json", settings);
     }
-    // Events.
+    void LoadCommands()
+    {
+    }
+
+    // Events
     void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       terminal.WriteLine("Saving...");
