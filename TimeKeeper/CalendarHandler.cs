@@ -326,6 +326,7 @@ namespace TimeKeeper
         }
       }
     }
+    
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Rounding == Rounding.None)
