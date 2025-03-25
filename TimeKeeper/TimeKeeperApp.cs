@@ -70,10 +70,22 @@ namespace TimeKeeper
             calendar.UpdateDeficit();
             break;
           case "break":
-            if (commands.Length == 2)
-              calendar.ToggleBreak(commands[1]);
-            else
+            if (commands.Length == 1)
+            {
               calendar.ToggleBreak();
+            }
+            if (commands.Length >= 2)
+            {
+              switch (commands[1].ToLower())
+              {
+                case "-name":
+                case "-n":
+                  calendar.ToggleBreak(commands[2]);
+                  break;
+                default:
+                  break;
+              }              
+            }
             calendar.Save();
             break;
           case "settings":
