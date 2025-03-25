@@ -74,208 +74,51 @@ namespace TimeKeeper.App
         InputHandler();
       }
     }
-    // Main Sceenes.
+
+    // Utils. 
     void InputHandler()
     {
       terminal.WriteLine("Ready for input");
+      terminal.Write("> ");
       string input = terminal.GetInput();
       string[] commands = terminal.ParseCommand(input);
-      if (commands.Length > 0)
-      {
-        switch (commands[0].ToLower())
-        {
-          case "exit":
-            isRunning = false;
-            break;
-          case "debug":
-            DebugScreen();
-            terminal.WaitForKeypress();
-            break;
-          case "update":
-            calendar.UpdateDeficit();
-            break;
-          case "break":
-            if (commands.Length == 1)
-            {
-              calendar.ToggleBreak();
-            }
-            if (commands.Length >= 2)
-            {
-              switch (commands[1].ToLower())
+      terminal.ExecuteCommand(commands);
+      /*
+            case "days":
+              if (commands.Length == 1)
               {
-                case "-name":
-                case "-n":
-                  calendar.ToggleBreak(commands[2]);
-                  break;
-                default:
-                  break;
-              }
-            }
-            calendar.Save();
-            break;
-          case "settings":
-            if (commands[1].ToLower() == "-keeper" ||
-                commands[1].ToLower() == "-k")
-            {
-              if (commands.Length == 3)
-              {
-                settings.KeeperName = commands[2];
-              }
-            }
-            else if (commands[1].ToLower() == "-rounding" ||
-                     commands[1].ToLower() == "-r")
-            {
-              if (commands.Length == 3)
-              {
-                int r = Int32.Parse(commands[2]);
-                switch (r)
-                {
-                  case (int)Rounding.FiveMinutes:
-                    settings.Rounding = Rounding.FiveMinutes;
-                    break;
-                  case (int)Rounding.TenMinutes:
-                    settings.Rounding = Rounding.TenMinutes;
-                    break;
-                  case (int)Rounding.FifteenMinutes:
-                    settings.Rounding = Rounding.FifteenMinutes;
-                    break;
-                  case (int)Rounding.ThirtyMinutes:
-                    settings.Rounding = Rounding.ThirtyMinutes;
-                    break;
-                  default:
-                    settings.Rounding = Rounding.None;
-                    break;
-                }
-                calendar.SetRounding(settings.Rounding);
-              }
-            }
-            else if (commands[1].ToLower() == "-showdeficit" ||
-                     commands[1].ToLower() == "-sd")
-            {
-              bool showDeficit = false;
-              if (commands[2] == "0")
-              {
-                // value is allready 0
-              }
-              else if (commands[2] == "1")
-              {
-                showDeficit = true;
-              }
-              else
-              {
-                showDeficit = Boolean.Parse(commands[2]);
-              }
-              settings.ShowDeficit = showDeficit;
-            }
-            else if (commands[1].ToLower() == "-showtotalwork" ||
-                     commands[1].ToLower() == "-sw")
-            {
-              bool showWork = false;
-              if (commands[2] == "0")
-              {
-                // value is allready 0
-              }
-              else if (commands[2] == "1")
-              {
-                showWork = true;
-              }
-              else
-              {
-                showWork = Boolean.Parse(commands[2]);
-              }
-              settings.ShowTotalWork = showWork;
-            }
-            SaveSettings();
-            break;
-          case "checkin":
-          case "clockin":
-            calendar.ClockIn(DateTime.Now);
-            calendar.Save();
-            break;
-          case "checkout":
-          case "clockout":
-            calendar.ClockOut(DateTime.Now);
-            calendar.Save();
-            break;
-          case "days":
-            if (commands.Length == 1)
-            {
-              StatusForActiveMonth();
-              InputHandler();
-              break;
-            }
-            if (commands[1] == "-limit" ||
-                commands[1] == "-l")
-            {
-              int l = Int32.Parse(commands[2]);
-              StatusForActiveMonth(l);
-              InputHandler();
-              break;
-            }
-            if (commands[1] == "-expectedworkday" ||
-                commands[1] == "-ew")
-              if (commands.Length == 4)
-              {
-                TimeSpan ew = TimeSpan.Parse(commands[2]);
-                int d = Int32.Parse(commands[3]);
-                DayOfWeek wd = (DayOfWeek)d;
-
-                calendar.SetExpectedWorkDay(wd, ew);
-                if (settings.ExpectedWorkWeek.ContainsKey(wd))
-                {
-                  settings.ExpectedWorkWeek[wd] = ew;
-                  break;
-                }
-                settings.ExpectedWorkWeek.Add(wd, ew);
-              }
-            break;
-          case "day":
-            if (commands[1].ToLower() == "-get" ||
-                commands[1].ToLower() == "-g")
-            {
-              int i = Int32.Parse(commands[2]);
-              calendar.ActivateDay(i);
-              break;
-            }
-            if (calendar.IsDayActive() == false)
-            {
-              terminal.WriteLine("No day loaded.");
-              break;
-            }
-            switch (commands[1])
-            {
-              case "-start":
-              case "-s":
-                DateTime startdatetime = DateTime.Parse(commands[2]);
-                calendar.SetDayStart(startdatetime);
+                StatusForActiveMonth();
+                InputHandler();
                 break;
-              case "-e":
-              case "-end":
-                DateTime enddateTime = DateTime.Parse(commands[2]);
-                calendar.SetDayEnd(enddateTime);
+              }
+              if (commands[1] == "-limit" ||
+                  commands[1] == "-l")
+              {
+                int l = Int32.Parse(commands[2]);
+                StatusForActiveMonth(l);
+                InputHandler();
                 break;
-              case "-expectedworkday":
-              case "-ew":
-                if (commands.Length == 3)
+              }
+              if (commands[1] == "-expectedworkday" ||
+                  commands[1] == "-ew")
+                if (commands.Length == 4)
                 {
                   TimeSpan ew = TimeSpan.Parse(commands[2]);
-                  calendar.SetDayExpectedWorkDay(ew);
+                  int d = Int32.Parse(commands[3]);
+                  DayOfWeek wd = (DayOfWeek)d;
+
+                  calendar.SetExpectedWorkDay(wd, ew);
+                  if (settings.ExpectedWorkWeek.ContainsKey(wd))
+                  {
+                    settings.ExpectedWorkWeek[wd] = ew;
+                    break;
+                  }
+                  settings.ExpectedWorkWeek.Add(wd, ew);
                 }
-                break;
-              default:
-                terminal.WriteLine($"Unknown tag {commands[1]}");
-                terminal.WriteLine("Valid tags: -[s]tart, -[e]nd, -[l]unch");
-                break;
-            }
-            // Save changes to disk.
-            calendar.Save();
-            break;
-          default:
-            terminal.WriteLine($"Unknown Command {commands[0]}");
-            terminal.WaitForKeypress();
-            break;
-        }
-      }
+              break;
+              */
+
+
     }
     void LoadSettings()
     {
@@ -291,6 +134,76 @@ namespace TimeKeeper.App
     }
     void LoadCommands()
     {
+
+      // Debug
+      Command command = new Command("debug");
+      command.SetDefaultAction(HandleDebug);
+
+      terminal.AddCommand(command);
+
+      // Exit
+      command = new Command("exit");
+      command.SetDefaultAction(HandleExit);
+
+      terminal.AddCommand(command);
+
+      // Update
+      command = new Command("update");
+      command.SetDefaultAction(HandleUpdateCalender);
+
+      terminal.AddCommand(command);
+
+
+      // Checkin
+      command = new Command("checkin");
+      command.SetDefaultAction(HandleClockIn);
+
+      terminal.AddCommand(command);
+      // Clockin
+      command = new Command("clockin");
+      command.SetDefaultAction(HandleClockIn);
+
+      terminal.AddCommand(command);
+
+
+      // Checkout
+      command = new Command("checkout");
+      command.SetDefaultAction(HandleClockOut);
+
+      terminal.AddCommand(command);
+      // Clockout
+      command = new Command("clockout");
+      command.SetDefaultAction(HandleClockOut);
+
+      terminal.AddCommand(command);
+
+      // Break
+      command = new Command("break");
+      command.SetDefaultAction(HandleBreakToggle);
+      command.AddFlag("--name", HandleBreakStartWithName);
+      //command.AddFlag("--start", HandleBreakSetStart);
+      //command.AddFlag("--end", HandleBreakSetEnd);
+
+      terminal.AddCommand(command);
+
+      // Settings
+      command = new Command("settings");
+      command.AddFlag("--showdeficit", HandleSettingsSetShowDeficit);
+      command.AddFlag("--showtotalwork", HandleSettingsSetShowTotalWork);
+      command.AddFlag("--keeper", HandleSettingsSetKeeper);
+      command.AddFlag("--rounding", HandleSettingsSetRounding);
+      command.AddFlag("--expectedworkWeek", HandleSettingsSetExpectedWorkWeek);
+
+      terminal.AddCommand(command);
+
+      // Day
+      command = new Command("day");
+      command.AddFlag("--get", HandleDayGet);
+      command.AddFlag("--start", HandleDaySetStart);
+      command.AddFlag("--end", HandleDaySetEnd);
+      command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
+
+      terminal.AddCommand(command);
     }
 
     // Events
@@ -302,6 +215,166 @@ namespace TimeKeeper.App
       terminal.WriteLine("Done");
       Thread.Sleep(500);
     }
+
+    // Command Handler
+    void HandleDebug()
+    {
+      DebugScreen();
+      terminal.WaitForKeypress();
+    }
+    void HandleExit()
+    {
+      isRunning = false;
+    }
+    void HandleClockIn()
+    {
+      calendar.ClockIn(DateTime.Now);
+      calendar.Save();
+    }
+    void HandleClockOut()
+    {
+      calendar.ClockOut(DateTime.Now);
+      calendar.Save();
+    }
+    void HandleUpdateCalender()
+    {
+      calendar.UpdateDeficit();
+    }
+    void HandleSettingsSetRounding(string[] args)
+    {
+      if (args.Length == 0 || !int.TryParse(args[0], out int rounding))
+      {
+        terminal.WriteLine("Usage: Setting --rounding <0,5,10,15,30>");
+        return;
+      }
+      switch (rounding)
+      {
+        case (int)Rounding.FiveMinutes:
+          settings.Rounding = Rounding.FiveMinutes;
+          break;
+        case (int)Rounding.TenMinutes:
+          settings.Rounding = Rounding.TenMinutes;
+          break;
+        case (int)Rounding.FifteenMinutes:
+          settings.Rounding = Rounding.FifteenMinutes;
+          break;
+        case (int)Rounding.ThirtyMinutes:
+          settings.Rounding = Rounding.ThirtyMinutes;
+          break;
+        default:
+          settings.Rounding = Rounding.None;
+          break;
+      }
+      calendar.SetRounding(settings.Rounding);
+      SaveSettings();
+    }
+    void HandleSettingsSetShowDeficit(string[] args)
+    {
+      if (args.Length == 1)
+      {
+        if (args[0] == "0")
+        {
+          settings.ShowTotalWork = false;
+        }
+        else if (args[0] == "1")
+        {
+          settings.ShowDeficit = true;
+        }
+        else if (Boolean.TryParse(args[0], out bool showDeficit))
+        {
+          settings.ShowDeficit = showDeficit;
+        }
+        SaveSettings();
+        return;
+      }
+      terminal.WriteLine("Usage: Setting");
+    }
+    void HandleSettingsSetShowTotalWork(string[] args)
+    {
+      if (args.Length == 1)
+      {
+        if (args[0] == "0")
+        {
+          settings.ShowTotalWork = false;
+        }
+        else if (args[0] == "1")
+        {
+          settings.ShowTotalWork = true;
+        }
+        else if (Boolean.TryParse(args[0], out bool showTotalWork))
+        {
+          settings.ShowTotalWork = showTotalWork;
+        }
+        SaveSettings();
+        return;
+      }
+      terminal.WriteLine("Usage: Setting");
+    }
+    void HandleSettingsSetKeeper(string[] args)
+    {
+      if (args.Length == 0)
+      {
+        terminal.WriteLine("Usage: Setting");
+        return;
+      }
+      settings.KeeperName = args[0];
+    }
+    void HandleSettingsSetExpectedWorkWeek(string[] args) { }
+    void HandleDayGet(string[] args)
+    {
+      if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
+      {
+        terminal.WriteLine("Usage: day");
+        return;
+      }
+      calendar.ActivateDay(dayID);
+      if (calendar.IsDayActive() == false)
+      {
+        terminal.WriteLine("No day loaded.");
+      }
+    }
+    void HandleDaySetStart(string[] args)
+    {
+      if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime startdatetime))
+      {
+        terminal.WriteLine("Usage: day");
+        return;
+      }
+      calendar.SetDayStart(startdatetime);
+      calendar.Save();
+    }
+    void HandleDaySetEnd(string[] args)
+    {
+      if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime enddateTime))
+      {
+        terminal.WriteLine("Usage: day");
+        return;
+      }
+      calendar.SetDayEnd(enddateTime);
+      calendar.Save();
+    }
+    void HandleDaySetExpectedWorkDay(string[] args)
+    {
+      if (args.Length == 0 || !TimeSpan.TryParse(args[0], out TimeSpan ew))
+      {
+        terminal.WriteLine("Usage: day");
+        return;
+      }
+      calendar.SetDayExpectedWorkDay(ew);
+      calendar.Save();
+    }
+    void HandleBreakToggle()
+    {
+      calendar.ToggleBreak();
+      calendar.Save();
+    }
+    void HandleBreakStartWithName(string[] args)
+    {
+      calendar.ToggleBreak(args[0]);
+      calendar.Save();
+    }
+    void HandleBreakSetStart(string[] args) { }
+    void HandleBreakSetEnd(string[] args) { }
 
     // Screens. 
     void MainScreen()
