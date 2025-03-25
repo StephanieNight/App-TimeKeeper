@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
+using TimeKeeper.App.Enums;
 
-namespace TimeKeeper
+namespace TimeKeeper.App
 {
   class Settings
   {
@@ -24,6 +25,5 @@ namespace TimeKeeper
         return "";
       }
     }
-
   }
 }

@@ -1,7 +1,9 @@
 using System.Diagnostics;
-using TimeKeeper.Models;
+using TimeKeeper.App.Models;
+using TimeKeeper.App.Enums;
+using TimeKeeper.App.Handlers;
 
-namespace TimeKeeper
+namespace TimeKeeper.App
 {
   /// <summary>
   /// The time keeper is a little app for simplyfying office hours.
@@ -9,15 +11,16 @@ namespace TimeKeeper
   /// This is only for clocking in and clocking out, and keeping up with flex over time. 
   /// Specefic task time is handled by other applications. 
   /// </summary>
-  internal class TimeKeeperApp
+  class TimeKeeperApp
   {
-    static FileHandler filesystem;
-    static TerminalHandler terminal;
-    static CalendarHandler calendar;
-    static Settings settings = new Settings();
-    static bool isRunning = true;
+    FileHandler filesystem;
+    TerminalHandler terminal;
+    CalendarHandler calendar;
+    Settings settings = new Settings();
+    bool isRunning = true;
 
-    static void Main(string[] args)
+    // Start
+    public void Main()
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
@@ -49,8 +52,8 @@ namespace TimeKeeper
         InputHandler();
       }
     }
-    // Main.
-    static void InputHandler()
+    // Main Sceenes.
+    void InputHandler()
     {
       terminal.WriteLine("Ready for input");
       string input = terminal.GetInput();
@@ -84,7 +87,7 @@ namespace TimeKeeper
                   break;
                 default:
                   break;
-              }              
+              }
             }
             calendar.Save();
             break;
@@ -252,7 +255,7 @@ namespace TimeKeeper
         }
       }
     }
-    static void LoadSettings()
+    void LoadSettings()
     {
       string settingsFileName = $"settings.json";
       if (filesystem.FileExists(settingsFileName))
@@ -260,12 +263,12 @@ namespace TimeKeeper
         settings = filesystem.Deserialize<Settings>(settingsFileName, true);
       }
     }
-    static void SaveSettings()
+    void SaveSettings()
     {
       filesystem.Serialize<Settings>("settings.json", settings);
     }
     // Events.
-    static void CurrentDomain_ProcessExit(object sender, EventArgs e)
+    void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       terminal.WriteLine("Saving...");
       calendar.Save();
@@ -275,7 +278,7 @@ namespace TimeKeeper
     }
 
     // Screens. 
-    private static void MainScreen()
+    void MainScreen()
     {
       var incompleteDays = calendar.GetIncomplteDays();
       if (incompleteDays.Count > 0)
@@ -381,7 +384,7 @@ namespace TimeKeeper
         terminal.Seperator();
       }
     }
-    private static void DebugScreen()
+    void DebugScreen()
     {
       terminal.Seperator();
       Process p = Process.GetCurrentProcess();
@@ -457,7 +460,7 @@ namespace TimeKeeper
       terminal.WriteLine($"Loaded Days   : {daysCount}");
       terminal.Seperator();
     }
-    private static void StatusForActiveMonth(int limit = -1)
+    void StatusForActiveMonth(int limit = -1)
     {
       var days = calendar.GetDays();
       var startindex = 0;
@@ -474,7 +477,7 @@ namespace TimeKeeper
     }
 
     // Formating.
-    private static string FormatedActualWorkDay(DayModel day)
+    string FormatedActualWorkDay(DayModel day)
     {
       var worked = day.GetActualWorkDay();
       string formated = "";
@@ -493,10 +496,9 @@ namespace TimeKeeper
       formated += $"{Math.Abs(worked.Hours):00}:{Math.Abs(worked.Minutes):00}:{Math.Abs(worked.Seconds):00} [{worked.TotalHours:0.00}]";
       return formated;
     }
-    private static string FormatedTimeSpan(TimeSpan timeSpan)
+    string FormatedTimeSpan(TimeSpan timeSpan)
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
     }
   }
-
 }
