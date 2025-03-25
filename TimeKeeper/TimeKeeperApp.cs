@@ -66,6 +66,28 @@ namespace TimeKeeper
             DebugScreen();
             terminal.WaitForKeypress();
             break;
+          case "update":
+            calendar.UpdateDeficit();
+            break;
+          case "break":
+            if (commands.Length == 1)
+            {
+              calendar.ToggleBreak();
+            }
+            if (commands.Length >= 2)
+            {
+              switch (commands[1].ToLower())
+              {
+                case "-name":
+                case "-n":
+                  calendar.ToggleBreak(commands[2]);
+                  break;
+                default:
+                  break;
+              }              
+            }
+            calendar.Save();
+            break;
           case "settings":
             if (commands[1].ToLower() == "-keeper" ||
                 commands[1].ToLower() == "-k")
@@ -172,7 +194,7 @@ namespace TimeKeeper
                 TimeSpan ew = TimeSpan.Parse(commands[2]);
                 int d = Int32.Parse(commands[3]);
                 DayOfWeek wd = (DayOfWeek)d;
-                                
+
                 calendar.SetExpectedWorkDay(wd, ew);
                 if (settings.ExpectedWorkWeek.ContainsKey(wd))
                 {
@@ -207,20 +229,10 @@ namespace TimeKeeper
                 DateTime enddateTime = DateTime.Parse(commands[2]);
                 calendar.SetDayEnd(enddateTime);
                 break;
-              case "-l":
-              case "-lunch":
-                TimeSpan lunchtime = TimeSpan.Parse(commands[2]);
-                calendar.SetDayLunch(lunchtime);
-                break;
-              case "-lt":
-              case "-lunchtime":
-                TimeSpan completed = TimeSpan.Parse(commands[2]);
-                calendar.SetDayLunchCompleted(completed);
-                break;
               case "-expectedworkday":
               case "-ew":
                 if (commands.Length == 3)
-                {                  
+                {
                   TimeSpan ew = TimeSpan.Parse(commands[2]);
                   calendar.SetDayExpectedWorkDay(ew);
                 }
@@ -269,8 +281,8 @@ namespace TimeKeeper
       if (incompleteDays.Count > 0)
       {
         if (incompleteDays.Count == 1 &&
-           incompleteDays[0].StartTime.HasValue &&
-           incompleteDays[0].StartTime.Value.Date == DateTime.Now.Date)
+            incompleteDays[0].StartTime.HasValue &&
+            incompleteDays[0].StartTime.Value.Date == DateTime.Now.Date)
         {
           // Do nothing this is expected for the current date to not be complete.
         }
@@ -322,16 +334,45 @@ namespace TimeKeeper
             DayModel day = calendar.GetActiveDay();
             currentDate = currentDate.AddDays(day.Id - 1);
             terminal.WriteLine($"Active day     :  [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
+            terminal.Seperator();
             terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-
-            if (day.IsLunchComplete)
+            if (day.IsOnBreak)
             {
-              terminal.WriteLine($"Lunch          :  {day.Lunch.ToString()}");
-              terminal.WriteLine($"Lunch Ended    :  {day.LunchTimeCompleted.ToString("hh:mm:ss")}");
+              terminal.WriteLine($"Staus          :  IS ON BREAK!");
             }
             terminal.Seperator();
+
+            // Breaks
+            if (day.Breaks.Count > 0)
+            {
+              if (day.Breaks.Count == 1 && day.IsOnBreak)
+              { // do not print when on break and no breaks ready.
+              }
+              else
+              {
+                terminal.Write($"Breaks         :  ");
+                for (int i = 0; i < day.Breaks.Count; i++)
+                {
+                  var dayBreak = day.Breaks[i];
+                  if (dayBreak.IsCompleted == false)
+                  {
+                    // Skip non completed breaks.
+                    continue;
+                  }
+                  if (i == 0)
+                  {
+                    terminal.WriteLine($"{dayBreak.Duration().ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                  }
+                  else
+                  {
+                    terminal.WriteLine($"               :  {dayBreak.Duration().ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                  }
+                }
+                terminal.Seperator();
+              }
+            }
             terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
             terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
@@ -384,10 +425,17 @@ namespace TimeKeeper
           terminal.WriteLine($"    - Days loaded: {days.Count}");
           foreach (DayModel day in days)
           {
-            terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.GetDeficit())}");
-            dayDeficit += day.GetDeficit();
-            terminal.WriteLine($"                Total : {FormatedTimeSpan(dayDeficit)}");
+            if (day.IsComplete)
+            {
+              terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.GetDeficit())}");
+              dayDeficit += day.GetDeficit();
+            }
+            else
+            {
+              terminal.WriteLine($"       - [{day.Id:00}] Deficit : 00:00:00");
+            }
           }
+          terminal.WriteLine($"              - Total : {FormatedTimeSpan(dayDeficit)}");
           terminal.WriteLine($"    - Month Deficit   : {FormatedTimeSpan(month.Deficit)}");
           terminal.WriteLine($"    - counted Deficit : {FormatedTimeSpan(dayDeficit)}");
 
