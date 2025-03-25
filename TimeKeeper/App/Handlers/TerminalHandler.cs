@@ -3,6 +3,42 @@ namespace TimeKeeper.App.Handlers
 {
   class TerminalHandler
   {
+    Dictionary<string, Command> commands = new Dictionary<string, Command>();
+
+    public void AddCommand(Command command)
+    {
+      commands.Add(command.Name,command);
+    }
+    public void ExecuteCommand(string[] parts)
+    {
+      string commandName = parts[0].ToLower();
+
+      if (!commands.TryGetValue(commandName, out Command command))
+      {
+        Console.WriteLine($"Unknown command: {commandName}");
+        return;
+      }
+
+      if (parts.Length == 1)
+      {
+        if(command.DefaultAction != null){
+          command.DefaultAction?.Invoke(); // Run default action if available
+          return;
+        }
+        Console.WriteLine($"Available flags for {commandName}: {string.Join(", ", command.Flags.Keys)}");
+        return;
+      }
+
+      string flag = parts[1].ToLower();
+      string[] flagArgs = parts.Length > 2 ? parts[2..] : new string[0];
+
+      if (!command.Flags.TryGetValue(flag, out Action<string[]> action))
+      {
+        Console.WriteLine($"Unknown flag: {flag}");
+        return;
+      }
+      action.Invoke(flagArgs);
+    }
 
     private void ClearInputBuffer()
     {
