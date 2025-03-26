@@ -83,40 +83,6 @@ namespace TimeKeeper.App
       string input = terminal.GetInput();
       string[] commands = terminal.ParseCommand(input);
       terminal.ExecuteCommand(commands);
-      /*
-            case "days":
-              if (commands.Length == 1)
-              {
-                StatusForActiveMonth();
-                InputHandler();
-                break;
-              }
-              if (commands[1] == "-limit" ||
-                  commands[1] == "-l")
-              {
-                int l = Int32.Parse(commands[2]);
-                StatusForActiveMonth(l);
-                InputHandler();
-                break;
-              }
-              if (commands[1] == "-expectedworkday" ||
-                  commands[1] == "-ew")
-                if (commands.Length == 4)
-                {
-                  TimeSpan ew = TimeSpan.Parse(commands[2]);
-                  int d = Int32.Parse(commands[3]);
-                  DayOfWeek wd = (DayOfWeek)d;
-
-                  calendar.SetExpectedWorkDay(wd, ew);
-                  if (settings.ExpectedWorkWeek.ContainsKey(wd))
-                  {
-                    settings.ExpectedWorkWeek[wd] = ew;
-                    break;
-                  }
-                  settings.ExpectedWorkWeek.Add(wd, ew);
-                }
-              break;
-              */
 
 
     }
@@ -138,18 +104,19 @@ namespace TimeKeeper.App
       // Debug
       Command command = new Command("debug");
       command.SetDefaultAction(HandleDebug);
-
+      command.SetDescription("Prints debug screen");
       terminal.AddCommand(command);
 
       // Exit
       command = new Command("exit");
       command.SetDefaultAction(HandleExit);
-
+      command.SetDescription("Saves and Exits the application");
       terminal.AddCommand(command);
 
       // Update
       command = new Command("update");
       command.SetDefaultAction(HandleUpdateCalender);
+      command.SetDescription("Force Updates the total work performed and the deficit.");
 
       terminal.AddCommand(command);
 
@@ -157,11 +124,14 @@ namespace TimeKeeper.App
       // Checkin
       command = new Command("checkin");
       command.SetDefaultAction(HandleClockIn);
+      command.SetDescription("Clocks in for work, start a new day.");
+
 
       terminal.AddCommand(command);
       // Clockin
       command = new Command("clockin");
       command.SetDefaultAction(HandleClockIn);
+      command.SetDescription("Clocks in for work, start a new day.");
 
       terminal.AddCommand(command);
 
@@ -169,16 +139,20 @@ namespace TimeKeeper.App
       // Checkout
       command = new Command("checkout");
       command.SetDefaultAction(HandleClockOut);
+      command.SetDescription("Clocks out of work");
 
       terminal.AddCommand(command);
+
       // Clockout
       command = new Command("clockout");
       command.SetDefaultAction(HandleClockOut);
+      command.SetDescription("Clocks out of work");
 
       terminal.AddCommand(command);
 
       // Break
       command = new Command("break");
+      command.SetDescription("Starts and ends breaks");
       command.SetDefaultAction(HandleBreakToggle);
       command.AddFlag("--name", HandleBreakStartWithName);
       //command.AddFlag("--start", HandleBreakSetStart);
@@ -202,6 +176,13 @@ namespace TimeKeeper.App
       command.AddFlag("--start", HandleDaySetStart);
       command.AddFlag("--end", HandleDaySetEnd);
       command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
+
+      terminal.AddCommand(command);
+
+      // Days
+      command = new Command("days");
+      command.AddFlag("--limit", HandleDaysStatusWithLimit);
+      command.SetDefaultAction(HandleDaysStatus);
 
       terminal.AddCommand(command);
     }
@@ -319,7 +300,117 @@ namespace TimeKeeper.App
       }
       settings.KeeperName = args[0];
     }
-    void HandleSettingsSetExpectedWorkWeek(string[] args) { }
+    void HandleSettingsSetExpectedWorkWeek(string[] args)
+    {
+      // set Mon-Fri and Weekend off
+      if (args.Length == 1)
+      {
+        if (TimeSpan.TryParse(args[0], out TimeSpan weekdays))
+        {
+          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          return;
+        }
+      }
+      // Set Mon-Thurs, friday and weekend off
+      if (args.Length == 2)
+      {
+        if (TimeSpan.TryParse(args[0], out TimeSpan weekdays)
+        && TimeSpan.TryParse(args[1], out TimeSpan friday))
+        {
+          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          return;
+        }
+      }
+      // Set Mon-Thurs, friday and Weekend
+      if (args.Length == 3)
+      {
+        if (TimeSpan.TryParse(args[0], out TimeSpan weekdays)
+        && TimeSpan.TryParse(args[1], out TimeSpan friday)
+        && TimeSpan.TryParse(args[2], out TimeSpan weekend))
+        {
+          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, weekend);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, weekend);
+          return;
+        }
+      }
+      // Set mon,tue,wens,thurs,fri and weekend off
+      if (args.Length == 5)
+      {
+        if (TimeSpan.TryParse(args[0], out TimeSpan monday)
+         && TimeSpan.TryParse(args[1], out TimeSpan tuesday)
+         && TimeSpan.TryParse(args[2], out TimeSpan wednesday)
+         && TimeSpan.TryParse(args[3], out TimeSpan thursday)
+         && TimeSpan.TryParse(args[4], out TimeSpan friday))
+        {
+          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          return;
+        }
+      }
+      // set all days in the week
+      if (args.Length == 7)
+      {
+        if (TimeSpan.TryParse(args[0], out TimeSpan monday)
+         && TimeSpan.TryParse(args[1], out TimeSpan tuesday)
+         && TimeSpan.TryParse(args[2], out TimeSpan wednesday)
+         && TimeSpan.TryParse(args[3], out TimeSpan thursday)
+         && TimeSpan.TryParse(args[4], out TimeSpan friday)
+         && TimeSpan.TryParse(args[5], out TimeSpan saturday)
+         && TimeSpan.TryParse(args[6], out TimeSpan sunday))
+        {
+          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, saturday);
+          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, sunday);
+          return;
+        }
+      }
+      terminal.WriteLine("Usage: Setting");
+
+    }
+    void HandleDaysStatus()
+    {
+      StatusForActiveMonth();
+    }
+    void HandleDaysStatusWithLimit(string[] args)
+    {
+      if (args.Length == 0 || !int.TryParse(args[0], out int dayLimit))
+      {
+        terminal.WriteLine("Usage: days");
+        return;
+      }
+      StatusForActiveMonth(dayLimit);
+    }
     void HandleDayGet(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))

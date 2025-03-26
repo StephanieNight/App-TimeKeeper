@@ -5,8 +5,17 @@ namespace TimeKeeper.App.Handlers
   {
     Dictionary<string, Command> commands = new Dictionary<string, Command>();
 
+    public TerminalHandler()
+    {
+      var command = new Command("help");
+      command.SetDescription("Prints all The usage messages of every registered command");
+      command.SetDefaultAction(HelpCommand);
+      AddCommand(command);
+    }
+
     public void AddCommand(Command command)
     {
+      //command.AddFlag("--help", _ => { WriteLine(command.GetHelp()); WaitForKeypress(); },"Prints usage message for this command" );
       commands.Add(command.Name,command);
     }
     public void ExecuteCommand(string[] parts)
@@ -25,7 +34,8 @@ namespace TimeKeeper.App.Handlers
           command.DefaultAction?.Invoke(); // Run default action if available
           return;
         }
-        Console.WriteLine($"Available flags for {commandName}: {string.Join(", ", command.Flags.Keys)}");
+        WriteLine(command.GetHelp());
+        WaitForKeypress();
         return;
       }
 
@@ -39,7 +49,14 @@ namespace TimeKeeper.App.Handlers
       }
       action.Invoke(flagArgs);
     }
-
+    public void HelpCommand()
+    {
+      foreach(var commands in commands.Values)
+      {
+        WriteLine(commands.GetHelp());
+      }
+      WaitForKeypress();
+    }
     private void ClearInputBuffer()
     {
       while (Console.KeyAvailable)
