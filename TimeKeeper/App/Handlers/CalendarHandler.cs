@@ -322,12 +322,15 @@ namespace TimeKeeper.App.Handlers
         DayModel day = GetActiveDay();
         if (day.IsOnBreak)
         {
-          day.EndBreak(GetRoundedTime(DateTime.Now));
+          BreakModel b = day.Breaks.Last();
+          b.EndTime =GetRoundedTime(DateTime.Now);
           UpdateDeficit();
         }
         else
         {
-          day.StartBreak(GetRoundedTime(DateTime.Now),name);
+          BreakModel b = new BreakModel();
+          b.Name = name;
+          day.AddBreak(b);
         }
       }
     }
