@@ -7,7 +7,6 @@ namespace TimeKeeper.App.Models
     public int Id { get; set; } = -1;
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public TimeSpan ExpectedWorkDay { get; set; }
     public List<BreakModel> Breaks { get; set; } = new List<BreakModel>();
     public bool IsComplete
     {
@@ -30,13 +29,6 @@ namespace TimeKeeper.App.Models
         return false;
       }
     }
-    public TimeSpan Deficit
-    {
-      get
-      {
-        return GetDeficit();
-      }
-    }
     public TimeSpan Duration
     {
       get
@@ -48,7 +40,6 @@ namespace TimeKeeper.App.Models
         return new TimeSpan();
       }
     }
-
     public TimeSpan TotalBreaks
     {
       get
@@ -61,6 +52,14 @@ namespace TimeKeeper.App.Models
       get
       {
         return GetActualWorkDay();
+      }
+    }
+    public TimeSpan ExpectedWorkDay { get; set; }
+    public TimeSpan Deficit
+    {
+      get
+      {
+        return GetDeficit();
       }
     }
     // breaks
