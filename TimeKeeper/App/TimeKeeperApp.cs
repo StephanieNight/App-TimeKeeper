@@ -82,9 +82,9 @@ namespace TimeKeeper.App
       terminal.Write("> ");
       string input = terminal.GetInput();
       string[] commands = terminal.ParseCommand(input);
-      terminal.ExecuteCommand(commands);
-
-
+      if(commands.Length > 0){
+        terminal.ExecuteCommand(commands);
+      }
     }
     void LoadSettings()
     {
@@ -556,11 +556,11 @@ namespace TimeKeeper.App
                   }
                   if (i == 0)
                   {
-                    terminal.WriteLine($"{dayBreak.Duration().ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                    terminal.WriteLine($"{dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
                   }
                   else
                   {
-                    terminal.WriteLine($"               :  {dayBreak.Duration().ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                    terminal.WriteLine($"               :  {dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
                   }
                 }
                 terminal.Seperator();
