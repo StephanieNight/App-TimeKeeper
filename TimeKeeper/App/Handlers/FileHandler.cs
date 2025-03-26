@@ -32,8 +32,7 @@ namespace TimeKeeper.App.Handlers
     public void Serialize<T>(string path, T obj, bool includeBasePath = true)
     {
       var options = new JsonSerializerOptions
-      {
-        IgnoreReadOnlyProperties = true,
+      {       
         WriteIndented = true
       };
       string jsonSerial = JsonSerializer.Serialize<T>(obj, options);
