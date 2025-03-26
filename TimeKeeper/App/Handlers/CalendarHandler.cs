@@ -330,6 +330,7 @@ namespace TimeKeeper.App.Handlers
         {
           BreakModel b = new BreakModel();
           b.Name = name;
+          b.StartTime =GetRoundedTime(DateTime.Now);
           day.AddBreak(b);
         }
       }
