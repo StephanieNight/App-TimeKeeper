@@ -5,7 +5,7 @@
     private Dictionary<int, DayModel> Days = new Dictionary<int, DayModel>();    
     public int Id { get; set; } = -1;
     public TimeSpan Deficit { get; set; }
-    public TimeSpan WorkedHours { get; set; }
+    public TimeSpan Worked { get; set; }
     public List<DayModel> GetDays()
     {
       return Days.Values.ToList();
@@ -38,12 +38,12 @@
         {
           if (day.IsComplete)
           {
-            deficit += day.GetDeficit();
-            worked += day.GetActualWorkDay();
+            deficit += day.Deficit;
+            worked += day.Worked;
           }
         }
         Deficit = deficit;
-        WorkedHours = worked;
+        Worked = worked;
       }
     }
     public bool ContainDayId(int id)

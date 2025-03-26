@@ -40,7 +40,7 @@
         {
           month.UpdateStatus();
           deficit += month.Deficit;
-          worked += month.WorkedHours;
+          worked += month.Worked;
         }
         Deficit = deficit;
         WorkedHours = worked;

@@ -568,7 +568,7 @@ namespace TimeKeeper.App
             }
             terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
-            terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.GetDeficit())}");
+            terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
         }
         terminal.Seperator();
@@ -620,8 +620,8 @@ namespace TimeKeeper.App
           {
             if (day.IsComplete)
             {
-              terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.GetDeficit())}");
-              dayDeficit += day.GetDeficit();
+              terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.Deficit)}");
+              dayDeficit += day.Deficit;
             }
             else
             {
@@ -662,14 +662,14 @@ namespace TimeKeeper.App
       for (int i = startindex; i < endindex; i++)
       {
         DayModel day = days[i];
-        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.GetActualWorkDay().TotalHours:0.00}]");
+        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
       }
     }
 
     // Formating.
     string FormatedActualWorkDay(DayModel day)
     {
-      var worked = day.GetActualWorkDay();
+      var worked = day.Worked;
       string formated = "";
       if (worked > day.ExpectedWorkDay)
       {
