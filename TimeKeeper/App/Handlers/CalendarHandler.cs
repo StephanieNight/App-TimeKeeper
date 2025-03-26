@@ -1,6 +1,8 @@
-using TimeKeeper.Models;
+using TimeKeeper.App.Models;
+using TimeKeeper.App.Enums;
+using TimeKeeper.App.Extensions;
 
-namespace TimeKeeper
+namespace TimeKeeper.App.Handlers
 {
   class CalendarHandler
   {
@@ -17,16 +19,10 @@ namespace TimeKeeper
 
     Dictionary<DayOfWeek, TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
 
-    public CalendarHandler(FileHandler filehandler, Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
+    public CalendarHandler(FileHandler filehandler)
     {
       filesystem = filehandler;
       filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
-
-      // Load saved expected work week into dictionary.
-      foreach (var work in expectedWorkWeek)
-      {
-        ExpectedWorkWeek.Add(work.Key, work.Value);
-      }
     }
 
     public List<DayModel> GetDays()
@@ -64,6 +60,15 @@ namespace TimeKeeper
         }
       }
       return DaysNotCompleted;
+    }
+
+
+    public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek){
+      // Load saved expected work week into dictionary.
+      foreach (var work in expectedWorkWeek)
+      {
+        ExpectedWorkWeek.Add(work.Key, work.Value);
+      }
     }
 
     public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
@@ -326,6 +331,7 @@ namespace TimeKeeper
         }
       }
     }
+    
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Rounding == Rounding.None)
