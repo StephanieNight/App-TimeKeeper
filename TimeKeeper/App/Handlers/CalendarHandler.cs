@@ -1,6 +1,8 @@
-using TimeKeeper.Models;
+using TimeKeeper.App.Models;
+using TimeKeeper.App.Enums;
+using TimeKeeper.App.Extensions;
 
-namespace TimeKeeper
+namespace TimeKeeper.App.Handlers
 {
   class CalendarHandler
   {
@@ -17,16 +19,10 @@ namespace TimeKeeper
 
     Dictionary<DayOfWeek, TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
 
-    public CalendarHandler(FileHandler filehandler, Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
+    public CalendarHandler(FileHandler filehandler)
     {
       filesystem = filehandler;
       filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
-
-      // Load saved expected work week into dictionary.
-      foreach (var work in expectedWorkWeek)
-      {
-        ExpectedWorkWeek.Add(work.Key, work.Value);
-      }
     }
 
     public List<DayModel> GetDays()
@@ -64,6 +60,15 @@ namespace TimeKeeper
         }
       }
       return DaysNotCompleted;
+    }
+
+
+    public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek){
+      // Load saved expected work week into dictionary.
+      foreach (var work in expectedWorkWeek)
+      {
+        ExpectedWorkWeek.Add(work.Key, work.Value);
+      }
     }
 
     public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
@@ -282,25 +287,25 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
-    public void SetDayLunch(TimeSpan lunchTime)
-    {
-      if (IsDayActive())
-      {
-        DayModel day = GetActiveDay();
-        day.Lunch = lunchTime;
-        UpdateDeficit();
-      }
-    }
-    public void SetDayLunchCompleted(TimeSpan lunchTime)
-    {
-      if (IsDayActive())
-      {
-        DayModel day = GetActiveDay();
-        var to = TimeOnly.FromTimeSpan(lunchTime);
-        day.LunchTimeCompleted = to;
-        UpdateDeficit();
-      }
-    }
+    //public void SetDayLunch(TimeSpan lunchTime)
+    //{
+    //  if (IsDayActive())
+    //  {
+    //    DayModel day = GetActiveDay();
+    //    day.Lunch = lunchTime;
+    //    UpdateDeficit();
+    //  }
+    //}
+    //public void SetDayLunchCompleted(TimeSpan lunchTime)
+    //{
+    //  if (IsDayActive())
+    //  {
+    //    DayModel day = GetActiveDay();
+    //    var to = TimeOnly.FromTimeSpan(lunchTime);
+    //    day.LunchTimeCompleted = to;
+    //    UpdateDeficit();
+    //  }
+    //}
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -310,7 +315,23 @@ namespace TimeKeeper
         UpdateDeficit();
       }
     }
-
+    public void ToggleBreak(string name = "break")
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        if (day.IsOnBreak)
+        {
+          day.EndBreak(GetRoundedTime(DateTime.Now));
+          UpdateDeficit();
+        }
+        else
+        {
+          day.StartBreak(GetRoundedTime(DateTime.Now),name);
+        }
+      }
+    }
+    
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Rounding == Rounding.None)
@@ -342,7 +363,6 @@ namespace TimeKeeper
     {
       Rounding = rounding;
     }
-
     public void LoadYears()
     {
       var files = filesystem.GetFilesInFolder($"{PathsData}");
@@ -381,7 +401,7 @@ namespace TimeKeeper
           if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
           {
             day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
-          }
+          }         
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
       }
