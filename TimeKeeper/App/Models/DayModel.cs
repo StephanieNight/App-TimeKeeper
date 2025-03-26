@@ -37,6 +37,25 @@ namespace TimeKeeper.App.Models
         return GetDeficit();
       }
     }
+    public TimeSpan Duration
+    {
+      get
+      {
+        if (IsComplete)
+        {
+          return EndTime.Value - StartTime.Value;
+        }
+        return new TimeSpan();
+      }
+    }
+
+    public TimeSpan TotalBreaks
+    {
+      get
+      {
+        return GetTotalBreaksSpan();
+      }
+    }
     public TimeSpan Worked
     {
       get
@@ -59,10 +78,7 @@ namespace TimeKeeper.App.Models
       TimeSpan duration = new TimeSpan();
       foreach (var b in Breaks)
       {
-        if (b.IsCompleted)
-        {
-          duration += b.Duration();
-        }
+        duration += b.Duration;
       }
       return duration;
     }
