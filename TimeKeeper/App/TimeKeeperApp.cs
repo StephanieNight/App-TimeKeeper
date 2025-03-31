@@ -15,6 +15,11 @@ namespace TimeKeeper.App
   /// This is only for clocking in and clocking out, and keeping up with flex over time. 
   /// Specefic task time is handled by other applications. 
   /// </summary>
+  /// 
+
+  // TODO: Add settings command for adding planned breaks. 
+  // TODO: Add Edit break start, end and name.
+
   class TimeKeeperApp
   {
     FileSystemManager Filesystem;
