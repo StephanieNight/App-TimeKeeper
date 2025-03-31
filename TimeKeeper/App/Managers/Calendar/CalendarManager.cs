@@ -12,16 +12,15 @@ namespace TimeKeeper.App.Managers.Calendar
     int ActiveDayId = -1;
     int ActiveMonthId = -1;
     int ActiveYearId = -1;
-
+   
+    CalendarSettings Settings;
     FileSystemManager Filesystem;
-    Rounding Rounding;
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
-    Dictionary<DayOfWeek, TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
-
-    public CalendarManager(FileSystemManager filesystem)
+    public CalendarManager(FileSystemManager filesystem, CalendarSettings calendarSettings)
     {
+      Settings = calendarSettings;
       Filesystem = filesystem;
       Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
     }
@@ -68,13 +67,13 @@ namespace TimeKeeper.App.Managers.Calendar
       // Load saved expected work week into dictionary.
       foreach (var work in expectedWorkWeek)
       {
-        ExpectedWorkWeek.Add(work.Key, work.Value);
+        Settings.ExpectedWorkWeek.Add(work.Key, work.Value);
       }
     }
 
     public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
-      if(ExpectedWorkWeek.ContainsKey(dayOfWeek)){
-        return ExpectedWorkWeek[dayOfWeek];
+      if(Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek)){
+        return Settings.ExpectedWorkWeek[dayOfWeek];
       }
       return GetDefaultExpectedWorkDay(dayOfWeek);
     }
@@ -339,13 +338,13 @@ namespace TimeKeeper.App.Managers.Calendar
     
     private DateTime GetRoundedTime(DateTime dateTime)
     {
-      if (Rounding == Rounding.None)
+      if (Settings.Rounding == Rounding.None)
       {
         return dateTime;
       }
       // Round Seconds
       dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
-      return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Rounding));
+      return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Settings.Rounding));
     }
     public void UpdateDeficit()
     {
@@ -357,16 +356,16 @@ namespace TimeKeeper.App.Managers.Calendar
 
     public void SetExpectedWorkDay(DayOfWeek dayOfWeek, TimeSpan timeSpan)
     {
-      if (ExpectedWorkWeek.ContainsKey(dayOfWeek))
+      if (Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek))
       {
-        ExpectedWorkWeek[dayOfWeek] = timeSpan;
+        Settings.ExpectedWorkWeek[dayOfWeek] = timeSpan;
         return;
       }
-      ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
+      Settings.ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
     }
     public void SetRounding(Rounding rounding)
     {
-      Rounding = rounding;
+      Settings.Rounding = rounding;
     }
     public void LoadYears()
     {

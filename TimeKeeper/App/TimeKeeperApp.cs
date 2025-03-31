@@ -17,10 +17,10 @@ namespace TimeKeeper.App
   /// </summary>
   class TimeKeeperApp
   {
-    FileSystemManager filesystem;
-    TerminalManeger terminal;
-    CalendarManager calendar;
-    Settings settings = new Settings();
+    FileSystemManager Filesystem;
+    TerminalManeger Terminal;
+    CalendarManager Calendar;
+    AppSettings Settings = new AppSettings();
     bool isRunning = true;
 
     public string DataLocation
@@ -42,9 +42,19 @@ namespace TimeKeeper.App
     public TimeKeeperApp()
     {
       // Initialize Manager
-      filesystem = new FileSystemManager(DataLocation);
-      terminal = new TerminalManeger();
-      calendar = new CalendarManager(filesystem);
+      Filesystem = new FileSystemManager(DataLocation);
+
+      // Load settings
+      LoadSettings();
+
+      Terminal = new TerminalManeger();
+
+      // Initialize commands
+      LoadCommands();
+
+      // Calendar.
+      Calendar = new CalendarManager(Filesystem,Settings.Calendar);
+      
     }
 
     // Start
@@ -52,30 +62,23 @@ namespace TimeKeeper.App
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
-      // Initialize
-      LoadCommands();
-
-      // Load Files and settings
-      LoadSettings();
-      calendar.LoadYears();
-      calendar.ActivateToday();
-      calendar.SetRounding(settings.Rounding);
-      calendar.AddExpectedWorkWeek(settings.ExpectedWorkWeek);
+      Calendar.LoadYears();
+      Calendar.ActivateToday();
 
       // Write welcome screen
-      terminal.WriteLine($"Welcome {settings.KeeperName}");
-      terminal.Seperator();
-      terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
-      terminal.Seperator();
-      terminal.WriteLine($"Loaded {calendar.GetDays().Count} days");
-      terminal.WriteLine($"{calendar.GetIncomplteDays().Count} is incomplete");
-      terminal.Seperator();
+      Terminal.WriteLine($"Welcome {Settings.KeeperName}");
+      Terminal.Seperator();
+      Terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
+      Terminal.Seperator();
+      Terminal.WriteLine($"Loaded {Calendar.GetDays().Count} days");
+      Terminal.WriteLine($"{Calendar.GetIncomplteDays().Count} is incomplete");
+      Terminal.Seperator();
       Thread.Sleep(1500);
 
       // Main Loop
       while (isRunning)
       {
-        terminal.Clear();
+        Terminal.Clear();
         MainScreen();
         InputHandler();
       }
@@ -84,25 +87,25 @@ namespace TimeKeeper.App
     // Utils. 
     void InputHandler()
     {
-      terminal.WriteLine("Ready for input");
-      terminal.Write("> ");
-      string input = terminal.GetInput();
-      string[] commands = terminal.ParseCommand(input);
+      Terminal.WriteLine("Ready for input");
+      Terminal.Write("> ");
+      string input = Terminal.GetInput();
+      string[] commands = Terminal.ParseCommand(input);
       if(commands.Length > 0){
-        terminal.ExecuteCommand(commands);
+        Terminal.ExecuteCommand(commands);
       }
     }
     void LoadSettings()
     {
       string settingsFileName = $"settings.json";
-      if (filesystem.FileExists(settingsFileName))
+      if (Filesystem.FileExists(settingsFileName))
       {
-        settings = filesystem.Deserialize<Settings>(settingsFileName, true);
+        Settings = Filesystem.Deserialize<AppSettings>(settingsFileName, true);
       }
     }
     void SaveSettings()
     {
-      filesystem.Serialize<Settings>("settings.json", settings);
+      Filesystem.Serialize<AppSettings>("settings.json", Settings);
     }
     void LoadCommands()
     {
@@ -111,20 +114,20 @@ namespace TimeKeeper.App
       CommandModel command = new CommandModel("debug");
       command.SetDefaultAction(HandleDebug);
       command.SetDescription("Prints debug screen");
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Exit
       command = new CommandModel("exit");
       command.SetDefaultAction(HandleExit);
       command.SetDescription("Saves and Exits the application");
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Update
       command = new CommandModel("update");
       command.SetDefaultAction(HandleUpdateCalender);
       command.SetDescription("Force Updates the total work performed and the deficit.");
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
 
       // Checkin
@@ -133,13 +136,13 @@ namespace TimeKeeper.App
       command.SetDescription("Clocks in for work, start a new day.");
 
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
       // Clockin
       command = new CommandModel("clockin");
       command.SetDefaultAction(HandleClockIn);
       command.SetDescription("Clocks in for work, start a new day.");
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
 
       // Checkout
@@ -147,14 +150,14 @@ namespace TimeKeeper.App
       command.SetDefaultAction(HandleClockOut);
       command.SetDescription("Clocks out of work");
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Clockout
       command = new CommandModel("clockout");
       command.SetDefaultAction(HandleClockOut);
       command.SetDescription("Clocks out of work");
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Break
       command = new CommandModel("break");
@@ -164,7 +167,7 @@ namespace TimeKeeper.App
       //command.AddFlag("--start", HandleBreakSetStart);
       //command.AddFlag("--end", HandleBreakSetEnd);
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Settings
       command = new CommandModel("settings");
@@ -174,7 +177,7 @@ namespace TimeKeeper.App
       command.AddFlag("--rounding", HandleSettingsSetRounding);
       command.AddFlag("--expectedworkWeek", HandleSettingsSetExpectedWorkWeek);
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Day
       command = new CommandModel("day");
@@ -183,23 +186,23 @@ namespace TimeKeeper.App
       command.AddFlag("--end", HandleDaySetEnd);
       command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
 
       // Days
       command = new CommandModel("days");
       command.AddFlag("--limit", HandleDaysStatusWithLimit);
       command.SetDefaultAction(HandleDaysStatus);
 
-      terminal.AddCommand(command);
+      Terminal.AddCommand(command);
     }
 
     // Events
     void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
-      terminal.WriteLine("Saving...");
-      calendar.Save();
+      Terminal.WriteLine("Saving...");
+      Calendar.Save();
       SaveSettings();
-      terminal.WriteLine("Done");
+      Terminal.WriteLine("Done");
       Thread.Sleep(500);
     }
 
@@ -207,7 +210,7 @@ namespace TimeKeeper.App
     void HandleDebug()
     {
       DebugScreen();
-      terminal.WaitForKeypress();
+      Terminal.WaitForKeypress();
     }
     void HandleExit()
     {
@@ -215,44 +218,45 @@ namespace TimeKeeper.App
     }
     void HandleClockIn()
     {
-      calendar.ClockIn(DateTime.Now);
-      calendar.Save();
+      Calendar.ClockIn(DateTime.Now);
+      Calendar.Save();
     }
     void HandleClockOut()
     {
-      calendar.ClockOut(DateTime.Now);
-      calendar.Save();
+      Calendar.ClockOut(DateTime.Now);
+      Calendar.Save();
     }
     void HandleUpdateCalender()
     {
-      calendar.UpdateDeficit();
+      Calendar.UpdateDeficit();
     }
     void HandleSettingsSetRounding(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int rounding))
       {
-        terminal.WriteLine("Usage: Setting --rounding <0,5,10,15,30>");
+        Terminal.WriteLine("Usage: Setting --rounding <0,5,10,15,30>");
         return;
       }
       switch (rounding)
       {
         case (int)Rounding.FiveMinutes:
-          settings.Rounding = Rounding.FiveMinutes;
+          Settings.Calendar.Rounding = Rounding.FiveMinutes;
           break;
         case (int)Rounding.TenMinutes:
-          settings.Rounding = Rounding.TenMinutes;
+          Settings.Calendar.Rounding = Rounding.TenMinutes;
           break;
         case (int)Rounding.FifteenMinutes:
-          settings.Rounding = Rounding.FifteenMinutes;
+          Settings.Calendar.Rounding = Rounding.FifteenMinutes;
           break;
         case (int)Rounding.ThirtyMinutes:
-          settings.Rounding = Rounding.ThirtyMinutes;
+          Settings.Calendar.Rounding = Rounding.ThirtyMinutes;
           break;
+        case (int)Rounding.None:
         default:
-          settings.Rounding = Rounding.None;
+          Settings.Calendar.Rounding = Rounding.None;
           break;
       }
-      calendar.SetRounding(settings.Rounding);
+      Calendar.SetRounding(Settings.Calendar.Rounding);
       SaveSettings();
     }
     void HandleSettingsSetShowDeficit(string[] args)
@@ -261,20 +265,20 @@ namespace TimeKeeper.App
       {
         if (args[0] == "0")
         {
-          settings.ShowTotalWork = false;
+          Settings.ShowTotalWork = false;
         }
         else if (args[0] == "1")
         {
-          settings.ShowDeficit = true;
+          Settings.ShowDeficit = true;
         }
         else if (Boolean.TryParse(args[0], out bool showDeficit))
         {
-          settings.ShowDeficit = showDeficit;
+          Settings.ShowDeficit = showDeficit;
         }
         SaveSettings();
         return;
       }
-      terminal.WriteLine("Usage: Setting");
+      Terminal.WriteLine("Usage: Setting");
     }
     void HandleSettingsSetShowTotalWork(string[] args)
     {
@@ -282,29 +286,29 @@ namespace TimeKeeper.App
       {
         if (args[0] == "0")
         {
-          settings.ShowTotalWork = false;
+          Settings.ShowTotalWork = false;
         }
         else if (args[0] == "1")
         {
-          settings.ShowTotalWork = true;
+          Settings.ShowTotalWork = true;
         }
         else if (Boolean.TryParse(args[0], out bool showTotalWork))
         {
-          settings.ShowTotalWork = showTotalWork;
+          Settings.ShowTotalWork = showTotalWork;
         }
         SaveSettings();
         return;
       }
-      terminal.WriteLine("Usage: Setting");
+      Terminal.WriteLine("Usage: Setting");
     }
     void HandleSettingsSetKeeper(string[] args)
     {
       if (args.Length == 0)
       {
-        terminal.WriteLine("Usage: Setting");
+        Terminal.WriteLine("Usage: Setting");
         return;
       }
-      settings.KeeperName = args[0];
+      Settings.KeeperName = args[0];
     }
     void HandleSettingsSetExpectedWorkWeek(string[] args)
     {
@@ -313,14 +317,14 @@ namespace TimeKeeper.App
       {
         if (TimeSpan.TryParse(args[0], out TimeSpan weekdays))
         {
-          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
           return;
         }
       }
@@ -330,14 +334,14 @@ namespace TimeKeeper.App
         if (TimeSpan.TryParse(args[0], out TimeSpan weekdays)
         && TimeSpan.TryParse(args[1], out TimeSpan friday))
         {
-          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
           return;
         }
       }
@@ -348,14 +352,14 @@ namespace TimeKeeper.App
         && TimeSpan.TryParse(args[1], out TimeSpan friday)
         && TimeSpan.TryParse(args[2], out TimeSpan weekend))
         {
-          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, weekend);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, weekend);
+          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, weekend);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, weekend);
           return;
         }
       }
@@ -368,14 +372,14 @@ namespace TimeKeeper.App
          && TimeSpan.TryParse(args[3], out TimeSpan thursday)
          && TimeSpan.TryParse(args[4], out TimeSpan friday))
         {
-          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
           return;
         }
       }
@@ -390,19 +394,18 @@ namespace TimeKeeper.App
          && TimeSpan.TryParse(args[5], out TimeSpan saturday)
          && TimeSpan.TryParse(args[6], out TimeSpan sunday))
         {
-          settings.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Saturday, saturday);
-          settings.ExpectedWorkWeek.Add(DayOfWeek.Sunday, sunday);
+          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, saturday);
+          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, sunday);
           return;
         }
       }
-      terminal.WriteLine("Usage: Setting");
-
+      Terminal.WriteLine("Usage: Setting");
     }
     void HandleDaysStatus()
     {
@@ -412,7 +415,7 @@ namespace TimeKeeper.App
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayLimit))
       {
-        terminal.WriteLine("Usage: days");
+        Terminal.WriteLine("Usage: days");
         return;
       }
       StatusForActiveMonth(dayLimit);
@@ -421,54 +424,54 @@ namespace TimeKeeper.App
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
       {
-        terminal.WriteLine("Usage: day");
+        Terminal.WriteLine("Usage: day");
         return;
       }
-      calendar.ActivateDay(dayID);
-      if (calendar.IsDayActive() == false)
+      Calendar.ActivateDay(dayID);
+      if (Calendar.IsDayActive() == false)
       {
-        terminal.WriteLine("No day loaded.");
+        Terminal.WriteLine("No day loaded.");
       }
     }
     void HandleDaySetStart(string[] args)
     {
       if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime startdatetime))
       {
-        terminal.WriteLine("Usage: day");
+        Terminal.WriteLine("Usage: day");
         return;
       }
-      calendar.SetDayStart(startdatetime);
-      calendar.Save();
+      Calendar.SetDayStart(startdatetime);
+      Calendar.Save();
     }
     void HandleDaySetEnd(string[] args)
     {
       if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime enddateTime))
       {
-        terminal.WriteLine("Usage: day");
+        Terminal.WriteLine("Usage: day");
         return;
       }
-      calendar.SetDayEnd(enddateTime);
-      calendar.Save();
+      Calendar.SetDayEnd(enddateTime);
+      Calendar.Save();
     }
     void HandleDaySetExpectedWorkDay(string[] args)
     {
       if (args.Length == 0 || !TimeSpan.TryParse(args[0], out TimeSpan ew))
       {
-        terminal.WriteLine("Usage: day");
+        Terminal.WriteLine("Usage: day");
         return;
       }
-      calendar.SetDayExpectedWorkDay(ew);
-      calendar.Save();
+      Calendar.SetDayExpectedWorkDay(ew);
+      Calendar.Save();
     }
     void HandleBreakToggle()
     {
-      calendar.ToggleBreak();
-      calendar.Save();
+      Calendar.ToggleBreak();
+      Calendar.Save();
     }
     void HandleBreakStartWithName(string[] args)
     {
-      calendar.ToggleBreak(args[0]);
-      calendar.Save();
+      Calendar.ToggleBreak(args[0]);
+      Calendar.Save();
     }
     void HandleBreakSetStart(string[] args) { }
     void HandleBreakSetEnd(string[] args) { }
@@ -476,7 +479,7 @@ namespace TimeKeeper.App
     // Screens. 
     void MainScreen()
     {
-      var incompleteDays = calendar.GetIncomplteDays();
+      var incompleteDays = Calendar.GetIncomplteDays();
       if (incompleteDays.Count > 0)
       {
         if (incompleteDays.Count == 1 &&
@@ -487,61 +490,61 @@ namespace TimeKeeper.App
         }
         else
         {
-          terminal.Seperator();
-          terminal.WriteLine($"Incomplete days");
+          Terminal.Seperator();
+          Terminal.WriteLine($"Incomplete days");
           foreach (DayModel day in incompleteDays)
           {
-            terminal.WriteLine($"[{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
+            Terminal.WriteLine($"[{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
           }
-          terminal.Seperator();
+          Terminal.Seperator();
         }
       }
       TimeSpan deficit = TimeSpan.Zero;
       TimeSpan totalwork = TimeSpan.Zero;
-      foreach (var year in calendar.GetYears())
+      foreach (var year in Calendar.GetYears())
       {
         deficit += year.Deficit;
         totalwork += year.WorkedHours;
       }
-      if (settings.ShowDeficit || settings.ShowTotalWork)
+      if (Settings.ShowDeficit || Settings.ShowTotalWork)
       {
-        if (settings.ShowDeficit)
+        if (Settings.ShowDeficit)
         {
-          terminal.WriteLine($"Total Deficit  : {FormatedTimeSpan(deficit)}");
+          Terminal.WriteLine($"Total Deficit  : {FormatedTimeSpan(deficit)}");
         }
-        if (settings.ShowTotalWork)
+        if (Settings.ShowTotalWork)
         {
-          terminal.WriteLine($"Total Work     :  {totalwork.TotalHours:00.0} h");
+          Terminal.WriteLine($"Total Work     :  {totalwork.TotalHours:00.0} h");
         }
-        terminal.Seperator();
+        Terminal.Seperator();
       }
-      if (calendar.IsYearActive())
+      if (Calendar.IsYearActive())
       {
         DateTime currentDate = new DateTime();
 
-        YearModel year = calendar.GetActiveYear();
+        YearModel year = Calendar.GetActiveYear();
         currentDate = currentDate.AddYears(year.Id - 1);
-        terminal.WriteLine($"Active Year    :  [{currentDate.ToString("yy")}] {currentDate.ToString("yyyy")}");
+        Terminal.WriteLine($"Active Year    :  [{currentDate.ToString("yy")}] {currentDate.ToString("yyyy")}");
 
-        if (calendar.IsMonthActive())
+        if (Calendar.IsMonthActive())
         {
-          MonthModel month = calendar.GetActiveMonth();
+          MonthModel month = Calendar.GetActiveMonth();
           currentDate = currentDate.AddMonths(month.Id - 1);
-          terminal.WriteLine($"Active Month   :  [{currentDate.Month:00}] {currentDate.ToString("MMMM")}");
-          if (calendar.IsDayActive())
+          Terminal.WriteLine($"Active Month   :  [{currentDate.Month:00}] {currentDate.ToString("MMMM")}");
+          if (Calendar.IsDayActive())
           {
-            DayModel day = calendar.GetActiveDay();
+            DayModel day = Calendar.GetActiveDay();
             currentDate = currentDate.AddDays(day.Id - 1);
-            terminal.WriteLine($"Active day     :  [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
-            terminal.Seperator();
-            terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
-            terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
-            terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
+            Terminal.WriteLine($"Active day     :  [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
+            Terminal.Seperator();
+            Terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
+            Terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
+            Terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
             if (day.IsOnBreak)
             {
-              terminal.WriteLine($"Staus          :  IS ON BREAK!");
+              Terminal.WriteLine($"Staus          :  IS ON BREAK!");
             }
-            terminal.Seperator();
+            Terminal.Seperator();
 
             // Breaks
             if (day.Breaks.Count > 0)
@@ -551,7 +554,7 @@ namespace TimeKeeper.App
               }
               else
               {
-                terminal.Write($"Breaks         :  ");
+                Terminal.Write($"Breaks         :  ");
                 for (int i = 0; i < day.Breaks.Count; i++)
                 {
                   var dayBreak = day.Breaks[i];
@@ -562,37 +565,37 @@ namespace TimeKeeper.App
                   }
                   if (i == 0)
                   {
-                    terminal.WriteLine($"{dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                    Terminal.WriteLine($"{dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
                   }
                   else
                   {
-                    terminal.WriteLine($"               :  {dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                    Terminal.WriteLine($"               :  {dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
                   }
                 }
-                terminal.Seperator();
+                Terminal.Seperator();
               }
             }
-            terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
-            terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
-            terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
+            Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
+            Terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
+            Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
         }
-        terminal.Seperator();
+        Terminal.Seperator();
       }
     }
     void DebugScreen()
     {
-      terminal.Seperator();
+      Terminal.Seperator();
       Process p = Process.GetCurrentProcess();
       long ram = p.PrivateMemorySize64;
-      terminal.WriteLine($"RAM: {ram / 1024 / 1024} MB");
+      Terminal.WriteLine($"RAM: {ram / 1024 / 1024} MB");
       p.Dispose();
-      terminal.Seperator();
-      terminal.WriteLine($"Keeper name: {settings.KeeperName}");
-      terminal.WriteLine($"Rounding   : {settings.Rounding}");
-      terminal.WaitForKeypress();
-      terminal.Seperator();
-      var years = calendar.GetYears();
+      Terminal.Seperator();
+      Terminal.WriteLine($"Keeper name: {Settings.KeeperName}");
+      Terminal.WriteLine($"Rounding   : {Settings.Calendar.Rounding}");
+      Terminal.WaitForKeypress();
+      Terminal.Seperator();
+      var years = Calendar.GetYears();
       var yearsDeficit = TimeSpan.Zero;
       var daysCount = 0;
       var monthsCount = 0;
@@ -603,62 +606,62 @@ namespace TimeKeeper.App
 
         DateOnly date = new DateOnly();
         date = date.AddYears(year.Id - 1);
-        terminal.WriteLine($"[{date.ToString("yy")}] {year.Id}.");
+        Terminal.WriteLine($"[{date.ToString("yy")}] {year.Id}.");
 
         var months = year.GetMonths();
         var monthDeficit = TimeSpan.Zero;
         monthsCount += months.Count;
 
-        terminal.WriteLine($" - Months loaded: {months.Count}");
+        Terminal.WriteLine($" - Months loaded: {months.Count}");
 
         foreach (MonthModel month in months)
         {
           date = date.AddMonths(month.Id - 1);
-          terminal.WriteLine($"   [{month.Id:00}] {date.ToString("MMMM")}.");
+          Terminal.WriteLine($"   [{month.Id:00}] {date.ToString("MMMM")}.");
 
           var days = month.GetDays();
           var dayDeficit = TimeSpan.Zero;
 
           daysCount += days.Count;
 
-          terminal.WriteLine($"    - Days loaded: {days.Count}");
+          Terminal.WriteLine($"    - Days loaded: {days.Count}");
           foreach (DayModel day in days)
           {
             if (day.IsComplete)
             {
-              terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.Deficit)}");
+              Terminal.WriteLine($"       - [{day.Id:00}] Deficit : {FormatedTimeSpan(day.Deficit)}");
               dayDeficit += day.Deficit;
             }
             else
             {
-              terminal.WriteLine($"       - [{day.Id:00}] Deficit : 00:00:00");
+              Terminal.WriteLine($"       - [{day.Id:00}] Deficit : 00:00:00");
             }
           }
-          terminal.WriteLine($"              - Total : {FormatedTimeSpan(dayDeficit)}");
-          terminal.WriteLine($"    - Month Deficit   : {FormatedTimeSpan(month.Deficit)}");
-          terminal.WriteLine($"    - counted Deficit : {FormatedTimeSpan(dayDeficit)}");
+          Terminal.WriteLine($"              - Total : {FormatedTimeSpan(dayDeficit)}");
+          Terminal.WriteLine($"    - Month Deficit   : {FormatedTimeSpan(month.Deficit)}");
+          Terminal.WriteLine($"    - counted Deficit : {FormatedTimeSpan(dayDeficit)}");
 
           monthDeficit += month.Deficit;
 
         }
 
-        terminal.WriteLine($" - year Deficit    : {FormatedTimeSpan(year.Deficit)}");
-        terminal.WriteLine($" - counted Deficit : {FormatedTimeSpan(monthDeficit)}");
+        Terminal.WriteLine($" - year Deficit    : {FormatedTimeSpan(year.Deficit)}");
+        Terminal.WriteLine($" - counted Deficit : {FormatedTimeSpan(monthDeficit)}");
 
         yearsDeficit += year.Deficit;
       }
-      terminal.Seperator();
-      terminal.WriteLine($"Total Deficit : {FormatedTimeSpan(yearsDeficit)}");
-      terminal.Seperator();
+      Terminal.Seperator();
+      Terminal.WriteLine($"Total Deficit : {FormatedTimeSpan(yearsDeficit)}");
+      Terminal.Seperator();
 
-      terminal.WriteLine($"Loaded Years  : {yearsCount}");
-      terminal.WriteLine($"Loaded Months : {monthsCount}");
-      terminal.WriteLine($"Loaded Days   : {daysCount}");
-      terminal.Seperator();
+      Terminal.WriteLine($"Loaded Years  : {yearsCount}");
+      Terminal.WriteLine($"Loaded Months : {monthsCount}");
+      Terminal.WriteLine($"Loaded Days   : {daysCount}");
+      Terminal.Seperator();
     }
     void StatusForActiveMonth(int limit = -1)
     {
-      var days = calendar.GetDays();
+      var days = Calendar.GetDays();
       var startindex = 0;
       var endindex = days.Count;
       if (limit > -1)
@@ -668,7 +671,7 @@ namespace TimeKeeper.App
       for (int i = startindex; i < endindex; i++)
       {
         DayModel day = days[i];
-        terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
+        Terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
       }
     }
 
