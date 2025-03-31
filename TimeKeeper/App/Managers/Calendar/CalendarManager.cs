@@ -12,7 +12,7 @@ namespace TimeKeeper.App.Managers.Calendar
     int ActiveDayId = -1;
     int ActiveMonthId = -1;
     int ActiveYearId = -1;
-   
+
     CalendarSettings Settings;
     FileSystemManager Filesystem;
 
@@ -63,7 +63,8 @@ namespace TimeKeeper.App.Managers.Calendar
     }
 
 
-    public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek){
+    public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
+    {
       // Load saved expected work week into dictionary.
       foreach (var work in expectedWorkWeek)
       {
@@ -71,11 +72,30 @@ namespace TimeKeeper.App.Managers.Calendar
       }
     }
 
-    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
-      if(Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek)){
+    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek)
+    {
+      if (Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek))
+      {
         return Settings.ExpectedWorkWeek[dayOfWeek];
       }
       return GetDefaultExpectedWorkDay(dayOfWeek);
+    }
+    public BreakModel[] GetPlannedBreaks(DateOnly date)
+    {
+      List<BreakModel> breaks = new List<BreakModel>();
+      
+      foreach (var planned in Settings.PlannedBreaks)
+      {
+        if (planned.ActiveOnDays.Contains(date.DayOfWeek))
+        {
+          BreakModel b = new BreakModel();
+          b.StartTime = new DateTime(date, planned.Start);
+          b.EndTime = new DateTime(date, planned.End);
+          b.Name = planned.Name;
+          breaks.Add(b);
+        }
+      }
+      return breaks.ToArray();
     }
     public TimeSpan GetDefaultExpectedWorkDay(DayOfWeek dayOfWeek)
     {
@@ -221,6 +241,8 @@ namespace TimeKeeper.App.Managers.Calendar
         ActivateDay(day.Id);
       }
     }
+
+
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -254,6 +276,7 @@ namespace TimeKeeper.App.Managers.Calendar
           var startTime = GetRoundedTime(startDateTime);
           day.StartTime = startTime;
           day.ExpectedWorkDay = GetExpectedWorkDay(startTime.DayOfWeek);
+          day.Breaks.AddRange(GetPlannedBreaks(DateOnly.FromDateTime(startTime)));
           day.Id = startDateTime.Day;
           AddDay(day, true);
         }
@@ -323,19 +346,19 @@ namespace TimeKeeper.App.Managers.Calendar
         if (day.IsOnBreak)
         {
           BreakModel b = day.Breaks.Last();
-          b.EndTime =GetRoundedTime(DateTime.Now);
+          b.EndTime = GetRoundedTime(DateTime.Now);
           UpdateDeficit();
         }
         else
         {
           BreakModel b = new BreakModel();
           b.Name = name;
-          b.StartTime =GetRoundedTime(DateTime.Now);
+          b.StartTime = GetRoundedTime(DateTime.Now);
           day.AddBreak(b);
         }
       }
     }
-    
+
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Settings.Rounding == Rounding.None)
@@ -405,7 +428,7 @@ namespace TimeKeeper.App.Managers.Calendar
           if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
           {
             day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
-          }         
+          }
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
       }
