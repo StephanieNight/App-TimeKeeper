@@ -1,4 +1,4 @@
-﻿namespace TimeKeeper.App.Models
+﻿namespace TimeKeeper.App.Managers.Calendar.Models
 {
   class MonthModel
   {

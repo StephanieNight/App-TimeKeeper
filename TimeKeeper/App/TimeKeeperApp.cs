@@ -1,8 +1,11 @@
 using System.Diagnostics;
-using TimeKeeper.App.Models;
-using TimeKeeper.App.Enums;
-using TimeKeeper.App.Handlers;
 using System.Runtime.InteropServices;
+using TimeKeeper.App.Managers.Terminal;
+using TimeKeeper.App.Managers.Calendar.Models;
+using TimeKeeper.App.Managers.Terminal.Models;
+using TimeKeeper.App.Managers.Calendar.Enums;
+using TimeKeeper.App.Common.Filesystem;
+using TimeKeeper.App.Managers.Calendar;
 
 namespace TimeKeeper.App
 {
@@ -14,9 +17,9 @@ namespace TimeKeeper.App
   /// </summary>
   class TimeKeeperApp
   {
-    FileHandler filesystem;
-    TerminalHandler terminal;
-    CalendarHandler calendar;
+    FileSystemManager filesystem;
+    TerminalManeger terminal;
+    CalendarManager calendar;
     Settings settings = new Settings();
     bool isRunning = true;
 
@@ -36,15 +39,18 @@ namespace TimeKeeper.App
       }
     }
 
+    public TimeKeeperApp()
+    {
+      // Initialize Manager
+      filesystem = new FileSystemManager(DataLocation);
+      terminal = new TerminalManeger();
+      calendar = new CalendarManager(filesystem);
+    }
+
     // Start
     public void Main()
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
-
-      // Initialize Manager
-      filesystem = new FileHandler(DataLocation);
-      terminal = new TerminalHandler();
-      calendar = new CalendarHandler(filesystem);
 
       // Initialize
       LoadCommands();
@@ -102,19 +108,19 @@ namespace TimeKeeper.App
     {
 
       // Debug
-      Command command = new Command("debug");
+      CommandModel command = new CommandModel("debug");
       command.SetDefaultAction(HandleDebug);
       command.SetDescription("Prints debug screen");
       terminal.AddCommand(command);
 
       // Exit
-      command = new Command("exit");
+      command = new CommandModel("exit");
       command.SetDefaultAction(HandleExit);
       command.SetDescription("Saves and Exits the application");
       terminal.AddCommand(command);
 
       // Update
-      command = new Command("update");
+      command = new CommandModel("update");
       command.SetDefaultAction(HandleUpdateCalender);
       command.SetDescription("Force Updates the total work performed and the deficit.");
 
@@ -122,14 +128,14 @@ namespace TimeKeeper.App
 
 
       // Checkin
-      command = new Command("checkin");
+      command = new CommandModel("checkin");
       command.SetDefaultAction(HandleClockIn);
       command.SetDescription("Clocks in for work, start a new day.");
 
 
       terminal.AddCommand(command);
       // Clockin
-      command = new Command("clockin");
+      command = new CommandModel("clockin");
       command.SetDefaultAction(HandleClockIn);
       command.SetDescription("Clocks in for work, start a new day.");
 
@@ -137,21 +143,21 @@ namespace TimeKeeper.App
 
 
       // Checkout
-      command = new Command("checkout");
+      command = new CommandModel("checkout");
       command.SetDefaultAction(HandleClockOut);
       command.SetDescription("Clocks out of work");
 
       terminal.AddCommand(command);
 
       // Clockout
-      command = new Command("clockout");
+      command = new CommandModel("clockout");
       command.SetDefaultAction(HandleClockOut);
       command.SetDescription("Clocks out of work");
 
       terminal.AddCommand(command);
 
       // Break
-      command = new Command("break");
+      command = new CommandModel("break");
       command.SetDescription("Starts and ends breaks");
       command.SetDefaultAction(HandleBreakToggle);
       command.AddFlag("--name", HandleBreakStartWithName);
@@ -161,7 +167,7 @@ namespace TimeKeeper.App
       terminal.AddCommand(command);
 
       // Settings
-      command = new Command("settings");
+      command = new CommandModel("settings");
       command.AddFlag("--showdeficit", HandleSettingsSetShowDeficit);
       command.AddFlag("--showtotalwork", HandleSettingsSetShowTotalWork);
       command.AddFlag("--keeper", HandleSettingsSetKeeper);
@@ -171,7 +177,7 @@ namespace TimeKeeper.App
       terminal.AddCommand(command);
 
       // Day
-      command = new Command("day");
+      command = new CommandModel("day");
       command.AddFlag("--get", HandleDayGet);
       command.AddFlag("--start", HandleDaySetStart);
       command.AddFlag("--end", HandleDaySetEnd);
@@ -180,7 +186,7 @@ namespace TimeKeeper.App
       terminal.AddCommand(command);
 
       // Days
-      command = new Command("days");
+      command = new CommandModel("days");
       command.AddFlag("--limit", HandleDaysStatusWithLimit);
       command.SetDefaultAction(HandleDaysStatus);
 

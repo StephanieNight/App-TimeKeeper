@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace TimeKeeper.App.Models
+namespace TimeKeeper.App.Managers.Calendar.Models
 {
   class DayModel
   {

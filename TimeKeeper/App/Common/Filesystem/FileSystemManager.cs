@@ -1,11 +1,11 @@
 using System.Text.Json;
 
-namespace TimeKeeper.App.Handlers
+namespace TimeKeeper.App.Common.Filesystem
 {
-  class FileHandler
+  class FileSystemManager
   {
     public string BasePath { get; set; }
-    public FileHandler(string basePath)
+    public FileSystemManager(string basePath)
     {
       BasePath = basePath;
       InitializeFolder(basePath);
@@ -35,7 +35,7 @@ namespace TimeKeeper.App.Handlers
       {       
         WriteIndented = true
       };
-      string jsonSerial = JsonSerializer.Serialize<T>(obj, options);
+      string jsonSerial = JsonSerializer.Serialize(obj, options);
 
       if (includeBasePath)
       {

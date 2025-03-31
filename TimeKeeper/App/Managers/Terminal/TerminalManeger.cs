@@ -1,19 +1,20 @@
+using TimeKeeper.App.Managers.Terminal.Models;
 
-namespace TimeKeeper.App.Handlers
+namespace TimeKeeper.App.Managers.Terminal
 {
-  class TerminalHandler
+  class TerminalManeger
   {
-    Dictionary<string, Command> commands = new Dictionary<string, Command>();
+    Dictionary<string, CommandModel> commands = new Dictionary<string, CommandModel>();
 
-    public TerminalHandler()
+    public TerminalManeger()
     {
-      var command = new Command("help");
+      var command = new CommandModel("help");
       command.SetDescription("Prints all The usage messages of every registered command");
       command.SetDefaultAction(HelpCommand);
       AddCommand(command);
     }
 
-    public void AddCommand(Command command)
+    public void AddCommand(CommandModel command)
     {
       //command.AddFlag("--help", _ => { WriteLine(command.GetHelp()); WaitForKeypress(); },"Prints usage message for this command" );
       commands.Add(command.Name,command);
@@ -22,7 +23,7 @@ namespace TimeKeeper.App.Handlers
     {
       string commandName = parts[0].ToLower();
 
-      if (!commands.TryGetValue(commandName, out Command command))
+      if (!commands.TryGetValue(commandName, out CommandModel command))
       {
         Console.WriteLine($"Unknown command: {commandName}");
         return;

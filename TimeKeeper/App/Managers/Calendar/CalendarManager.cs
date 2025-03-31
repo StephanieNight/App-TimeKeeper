@@ -1,10 +1,11 @@
-using TimeKeeper.App.Models;
-using TimeKeeper.App.Enums;
-using TimeKeeper.App.Extensions;
+using TimeKeeper.App.Common.Extensions;
+using TimeKeeper.App.Common.Filesystem;
+using TimeKeeper.App.Managers.Calendar.Enums;
+using TimeKeeper.App.Managers.Calendar.Models;
 
-namespace TimeKeeper.App.Handlers
+namespace TimeKeeper.App.Managers.Calendar
 {
-  class CalendarHandler
+  class CalendarManager
   {
     string PathsData = "Data";
 
@@ -12,17 +13,17 @@ namespace TimeKeeper.App.Handlers
     int ActiveMonthId = -1;
     int ActiveYearId = -1;
 
-    FileHandler filesystem;
+    FileSystemManager Filesystem;
     Rounding Rounding;
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
     Dictionary<DayOfWeek, TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
 
-    public CalendarHandler(FileHandler filehandler)
+    public CalendarManager(FileSystemManager filesystem)
     {
-      filesystem = filehandler;
-      filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
+      Filesystem = filesystem;
+      Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
     }
 
     public List<DayModel> GetDays()
@@ -369,10 +370,10 @@ namespace TimeKeeper.App.Handlers
     }
     public void LoadYears()
     {
-      var files = filesystem.GetFilesInFolder($"{PathsData}");
+      var files = Filesystem.GetFilesInFolder($"{PathsData}");
       foreach (var yearFile in files)
       {
-        YearModel year = filesystem.Deserialize<YearModel>(yearFile);
+        YearModel year = Filesystem.Deserialize<YearModel>(yearFile);
         Years.Add(year.Id, year);
       }
     }
@@ -380,10 +381,10 @@ namespace TimeKeeper.App.Handlers
     {
       if (IsYearActive())
       {
-        var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
+        var files = Filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
         foreach (var monthFile in files)
         {
-          MonthModel month = filesystem.Deserialize<MonthModel>(monthFile);
+          MonthModel month = Filesystem.Deserialize<MonthModel>(monthFile);
           Years[ActiveYearId].AddMonth(month);
         }
       }
@@ -392,14 +393,14 @@ namespace TimeKeeper.App.Handlers
     {
       if (IsMonthActive())
       {
-        var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
+        var files = Filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
         foreach (var dayfile in files)
         {
-          DayModel day = filesystem.Deserialize<DayModel>(dayfile);
+          DayModel day = Filesystem.Deserialize<DayModel>(dayfile);
           // Backward compatability for adding Index
           if (day.Id == -1)
           {
-            day.Id = Int32.Parse(Path.GetFileNameWithoutExtension(dayfile));
+            day.Id = int.Parse(Path.GetFileNameWithoutExtension(dayfile));
           }
           // Backward compatability for exprected workday not being configuratble.
           if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
@@ -414,13 +415,13 @@ namespace TimeKeeper.App.Handlers
     {
       foreach (YearModel year in Years.Values)
       {
-        filesystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
+        Filesystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
         foreach (MonthModel month in year.GetMonths())
         {
-          filesystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
+          Filesystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
           foreach (DayModel day in month.GetDays())
           {
-            filesystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
+            Filesystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
           }
         }
       }

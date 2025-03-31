@@ -1,5 +1,4 @@
-
-using TimeKeeper.App.Enums;
+using TimeKeeper.App.Managers.Calendar.Enums;
 
 namespace TimeKeeper.App
 {
