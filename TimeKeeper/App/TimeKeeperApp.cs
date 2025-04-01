@@ -185,6 +185,15 @@ namespace TimeKeeper.App
       Terminal.AddCommand(command);
 
       // Day
+      command = new CommandModel("month");
+      command.AddFlag("--get", HandleMonthGet);
+      //command.AddFlag("--start", HandleDaySetStart);
+      //command.AddFlag("--end", HandleDaySetEnd);
+      //command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
+
+      Terminal.AddCommand(command);
+
+      // Day
       command = new CommandModel("day");
       command.AddFlag("--get", HandleDayGet);
       command.AddFlag("--start", HandleDaySetStart);
@@ -425,6 +434,20 @@ namespace TimeKeeper.App
       }
       StatusForActiveMonth(dayLimit);
     }
+    void HandleMonthGet(string[] args)
+    {
+      if (args.Length == 0 || !int.TryParse(args[0], out int MonthID))
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      Calendar.ActivateMonth(MonthID);
+      if (Calendar.IsMonthActive() == false)
+      {
+        Terminal.WriteLine("No day loaded.");
+      }
+    }
+
     void HandleDayGet(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
@@ -678,6 +701,7 @@ namespace TimeKeeper.App
         DayModel day = days[i];
         Terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
       }
+      Terminal.WaitForKeypress();
     }
 
     // Formating.
