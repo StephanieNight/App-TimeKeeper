@@ -19,6 +19,9 @@ namespace TimeKeeper.App
 
   // TODO: Add settings command for adding planned breaks. 
   // TODO: Add Edit break start, end and name.
+  // TODO: Status for work and on break. 
+  // TODO: Show only breaks completed by time
+  // TODO:  
 
   class TimeKeeperApp
   {
