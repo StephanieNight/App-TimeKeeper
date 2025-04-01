@@ -1,16 +1,13 @@
 using System.Text.Json.Serialization;
 
-namespace TimeKeeper.App.Models
+namespace TimeKeeper.App.Managers.Calendar.Models
 {
   class DayModel
   {
     public int Id { get; set; } = -1;
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public TimeSpan ExpectedWorkDay { get; set; }
     public List<BreakModel> Breaks { get; set; } = new List<BreakModel>();
-
-    [JsonIgnore]
     public bool IsComplete
     {
       get
@@ -18,7 +15,6 @@ namespace TimeKeeper.App.Models
         return StartTime.HasValue && EndTime.HasValue;
       }
     }
-    [JsonIgnore]
     public bool IsOnBreak
     {
       get
@@ -33,48 +29,59 @@ namespace TimeKeeper.App.Models
         return false;
       }
     }
-
+    public TimeSpan Duration
+    {
+      get
+      {
+        if (IsComplete)
+        {
+          return EndTime.Value - StartTime.Value;
+        }
+        return new TimeSpan();
+      }
+    }
+    public TimeSpan TotalBreaks
+    {
+      get
+      {
+        return GetTotalBreaksSpan();
+      }
+    }
+    public TimeSpan Worked
+    {
+      get
+      {
+        return GetActualWorkDay();
+      }
+    }
+    public TimeSpan ExpectedWorkDay { get; set; }
+    public TimeSpan Deficit
+    {
+      get
+      {
+        return GetDeficit();
+      }
+    }
     // breaks
-    public void StartBreak(DateTime startTime, string name = "break")
+    public void AddBreak(BreakModel breakModel)
     {
-      foreach (var b in Breaks)
-      {
-        if (b.IsCompleted == false)
-        {
-          return;
-        }
-      }
-      var newBreak = new BreakModel();
-      newBreak.Name = name;
-      newBreak.StartTime = startTime;
-      Breaks.Add(newBreak);
+      Breaks.Add(breakModel);
     }
-    public void EndBreak(DateTime endTime)
+    public BreakModel GetBreak(int Id)
     {
-      foreach (var b in Breaks)
-      {
-        if (b.IsCompleted == false)
-        {
-          b.EndTime = endTime;
-          return;
-        }
-      }
+      return Breaks[Id];
     }
-
     // Time Spans
-    public TimeSpan GetTotalBreaksSpan()
+    private TimeSpan GetTotalBreaksSpan()
     {
       TimeSpan duration = new TimeSpan();
       foreach (var b in Breaks)
       {
-        if (b.IsCompleted)
-        {
-          duration += b.Duration();
-        }
+        duration += b.Duration;
       }
       return duration;
     }
-    public TimeSpan GetActualWorkDay()
+    private TimeSpan GetActualWorkDay()
     {
       TimeSpan work = DateTime.Now - StartTime.Value;
       if (IsComplete)
@@ -84,7 +91,7 @@ namespace TimeKeeper.App.Models
       work -= GetTotalBreaksSpan();
       return work;
     }
-    public TimeSpan GetDeficit()
+    private TimeSpan GetDeficit()
     {
       return GetActualWorkDay() - ExpectedWorkDay;
     }

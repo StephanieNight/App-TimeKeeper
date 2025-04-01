@@ -1,4 +1,4 @@
-﻿namespace TimeKeeper.App.Models
+﻿namespace TimeKeeper.App.Managers.Calendar.Models
 {
   class BreakModel
   {
@@ -16,13 +16,16 @@
         return false;
       }
     }
-    public TimeSpan Duration()
+    public TimeSpan Duration
     {
-      if (IsCompleted)
+      get
       {
-        return EndTime.Value - StartTime.Value;
+        if (IsCompleted)
+        {
+          return EndTime.Value - StartTime.Value;
+        }
+        return new TimeSpan();
       }
-      return new TimeSpan();
     }
   }
 }

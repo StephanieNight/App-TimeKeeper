@@ -1,9 +1,9 @@
 // Command class: Stores flags and their corresponding actions
 using System.Text;
 
-namespace TimeKeeper.App.Handlers
+namespace TimeKeeper.App.Managers.Terminal.Models
 {
-  class Command
+  class CommandModel
   {
     public string Name { get; }
     public string Description { get; private set; }
@@ -11,7 +11,7 @@ namespace TimeKeeper.App.Handlers
     public Dictionary<string, string> FlagDescriptions { get; }
     public Action? DefaultAction { get; private set; } // Default action if no flag is provided
 
-    public Command(string name)
+    public CommandModel(string name)
     {
       Name = name;
       Flags = new Dictionary<string, Action<string[]>>();
