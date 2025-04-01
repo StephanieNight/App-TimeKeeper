@@ -20,8 +20,7 @@ namespace TimeKeeper.App
   // TODO: Add settings command for adding planned breaks. 
   // TODO: Add Edit break start, end and name.
   // TODO: Status for work and on break. 
-  // TODO: Show only breaks completed by time
-  // TODO:  
+ 
 
   class TimeKeeperApp
   {
@@ -61,11 +60,12 @@ namespace TimeKeeper.App
       LoadCommands();
 
       // Calendar.
-      Calendar = new CalendarManager(Filesystem,Settings.Calendar);
-      
+      Calendar = new CalendarManager(Filesystem, Settings.Calendar);
+
     }
 
     // Start
+    // ------------------------------------------------------------
     public void Main()
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
@@ -93,13 +93,15 @@ namespace TimeKeeper.App
     }
 
     // Utils. 
+    // ------------------------------------------------------------
     void InputHandler()
     {
       Terminal.WriteLine("Ready for input");
       Terminal.Write("> ");
       string input = Terminal.GetInput();
       string[] commands = Terminal.ParseCommand(input);
-      if(commands.Length > 0){
+      if (commands.Length > 0)
+      {
         Terminal.ExecuteCommand(commands);
       }
     }
@@ -214,6 +216,7 @@ namespace TimeKeeper.App
     }
 
     // Events
+    // ------------------------------------------------------------
     void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       Terminal.WriteLine("Saving...");
@@ -224,6 +227,7 @@ namespace TimeKeeper.App
     }
 
     // Command Handler
+    // ------------------------------------------------------------
     void HandleDebug()
     {
       DebugScreen();
@@ -450,7 +454,6 @@ namespace TimeKeeper.App
         Terminal.WriteLine("No day loaded.");
       }
     }
-
     void HandleDayGet(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
@@ -508,6 +511,7 @@ namespace TimeKeeper.App
     void HandleBreakSetEnd(string[] args) { }
 
     // Screens. 
+    // ------------------------------------------------------------
     void MainScreen()
     {
       var incompleteDays = Calendar.GetIncomplteDays();
@@ -577,35 +581,30 @@ namespace TimeKeeper.App
             }
             Terminal.Seperator();
 
+
+
             // Breaks
-            if (day.Breaks.Count > 0)
+            // get all completed Breaks and breaks that are in the past.
+            var breaks = day.Breaks.Where(b => b.IsCompleted && b.EndTime < DateTime.Now).ToArray();
+
+            if (breaks.Length > 0)
             {
-              if (day.Breaks.Count == 1 && day.IsOnBreak)
-              { // do not print when on break and no breaks ready.
-              }
-              else
+              Terminal.Write($"Breaks         :  ");
+              for (int i = 0; i < breaks.Length; i++)
               {
-                Terminal.Write($"Breaks         :  ");
-                for (int i = 0; i < day.Breaks.Count; i++)
+                var dayBreak = breaks[i];
+                if (i == 0)
                 {
-                  var dayBreak = day.Breaks[i];
-                  if (dayBreak.IsCompleted == false)
-                  {
-                    // Skip non completed breaks.
-                    continue;
-                  }
-                  if (i == 0)
-                  {
-                    Terminal.WriteLine($"{dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
-                  }
-                  else
-                  {
-                    Terminal.WriteLine($"               :  {dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
-                  }
+                  Terminal.WriteLine($"{dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
                 }
-                Terminal.Seperator();
+                else
+                {
+                  Terminal.WriteLine($"               :  {dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                }
               }
+              Terminal.Seperator();
             }
+
             Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
             Terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
@@ -708,6 +707,7 @@ namespace TimeKeeper.App
     }
 
     // Formating.
+    // ------------------------------------------------------------
     string FormatedActualWorkDay(DayModel day)
     {
       var worked = day.Worked;
