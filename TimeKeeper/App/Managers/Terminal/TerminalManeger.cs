@@ -47,9 +47,13 @@ namespace TimeKeeper.App.Managers.Terminal
     }
     public void HelpCommand()
     {
-      foreach(var commands in commands.Values)
+      foreach(var command in commands.Values)
       {
-        WriteLine(commands.GetHelp());
+        if(command.Name == "help")
+        {
+          continue;
+        }
+        WriteLine(command.GetHelp());
       }
       WaitForKeypress();
     }
@@ -71,7 +75,7 @@ namespace TimeKeeper.App.Managers.Terminal
     {
       Console.Write(value);
     }
-    public void WriteLine(string value)
+    public void WriteLine(string value="")
     {
       Console.WriteLine(value);
     }
