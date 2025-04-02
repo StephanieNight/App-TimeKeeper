@@ -616,12 +616,12 @@ namespace TimeKeeper.App
       var daysCount = 0;
       var monthsCount = 0;
       var yearsCount = years.Count;
+      DateOnly date;
 
       foreach (YearModel year in years)
       {
-
-        DateOnly date = new DateOnly();
-        date = date.AddYears(year.Id - 1);
+        date = new DateOnly(year.Id,1,1);
+        // date = date.AddYears(year.Id - 1);
         Terminal.WriteLine($"[{date.ToString("yy")}] {year.Id}.");
 
         var months = year.GetMonths();
@@ -632,7 +632,7 @@ namespace TimeKeeper.App
 
         foreach (MonthModel month in months)
         {
-          date = date.AddMonths(month.Id - 1);
+          date = new DateOnly(year.Id,month.Id,1);
           Terminal.WriteLine($"   [{month.Id:00}] {date.ToString("MMMM")}.");
 
           var days = month.GetDays();
