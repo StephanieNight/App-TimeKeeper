@@ -14,7 +14,6 @@ namespace TimeKeeper.App.Managers.Terminal.Models
     public Dictionary<string, string> Tags { get; }
     public Dictionary<string, string> FlagDescriptions { get; }
     public Action? DefaultAction { get; private set; } // Default action if no flag is provided
-
     public CommandModel(string name)
     {
       Name = name;
@@ -22,17 +21,13 @@ namespace TimeKeeper.App.Managers.Terminal.Models
       FlagDescriptions = new Dictionary<string, string>();
       Tags = new Dictionary<string, string>();
     }
-
-    public void AddFlag(string flag, Action action)
+    // Public 
+    // ----------------------------------------------------------------------------
+    public void AddFlag(string flag, Action action, string description = "")
     {
-      AddFlag(flag, _ => action(), "");
+      AddFlag(flag, _ => action(), description);
     }
-    public void AddFlag(string flag, Action<string[]> action)
-    {
-
-      AddFlag(flag, action, "");
-    }
-    public void AddFlag(string flag, Action<string[]> action, string description)
+    public void AddFlag(string flag, Action<string[]> action, string description = "")
     {
       Flags[flag] = action;
       if (!string.IsNullOrWhiteSpace(description))
@@ -40,6 +35,7 @@ namespace TimeKeeper.App.Managers.Terminal.Models
         FlagDescriptions[flag] = description;
       }
     }
+
     public void GenerateTagsForFlags()
     {
       foreach (string flag in Flags.Keys)
@@ -54,46 +50,8 @@ namespace TimeKeeper.App.Managers.Terminal.Models
         }
         AddTagForFlag(flag, startIndex);
       }
-    }
-    private bool FindStartIndexForTag(string flag,out int startIndex)
-    {
-      string dublicate = "";
-      for (int i = 0; i < flag.Length; i++)
-      {
-        dublicate += flag[i];
-        foreach (string otherFlag in Flags.Keys)
-        {
-          if (otherFlag == flag)
-          {
-            continue;
-          }
-          if (otherFlag.StartsWith(dublicate))
-          {
-            break;
-          }
-          else {
-            startIndex = i;
-            return true;            
-          }
-        }
-      }
-      startIndex = -1;
-      return false;
-    }
-    private void AddTagForFlag(string flag, int startIndex)
-    {
-      int index = startIndex;
-      while (index < flag.Length)
-      {
-        string potentialTag = $"{flag[index]}";
-        if (!Tags.ContainsKey(potentialTag))
-        {
-          Tags.Add(potentialTag, flag);
-          return;
-        }
-        index++;
-      }
-    }
+    }   
+
     public void SetCommandDefaultAction(Action action)
     {
       DefaultAction = action;
@@ -102,23 +60,32 @@ namespace TimeKeeper.App.Managers.Terminal.Models
     {
       CommandDescription = description;
     }
+
     public string GetHelp()
     {
       StringBuilder helpText = new StringBuilder();
       helpText.AppendLine($"{Name} : ");
-      helpText.AppendLine($"Decription : {(string.IsNullOrEmpty(CommandDescription) ? "N/A" : CommandDescription)}");
-      helpText.AppendLine($"Available flags:");
-      foreach (var pair in Flags)
+      helpText.AppendLine($"Decription : {CommandDescription}");
+      foreach (var flag in Flags.Keys)
       {
-        helpText.Append(pair.Key);
-        if (FlagDescriptions.TryGetValue(pair.Key, out string desc))
+        helpText.Append($"--{flag} ");
+        foreach (var tagPair in Tags)
         {
-          helpText.Append($" {desc}");
+          if(tagPair.Value == flag)
+          {
+            helpText.Append($"-{tagPair.Key} ");
+          }
+        }
+
+        if (FlagDescriptions.TryGetValue(flag, out string desc))
+        {
+          helpText.Append($": {desc}");
         }
         helpText.AppendLine("");
       }
       return helpText.ToString();
     }
+
     public bool Invoke(string lookup, string[] flagArgs)
     {
       string flag = "";
@@ -140,6 +107,48 @@ namespace TimeKeeper.App.Managers.Terminal.Models
       }
       action.Invoke(flagArgs);
       return true;
+    }
+    // Privates 
+    // ----------------------------------------------------------------------------
+    private bool FindStartIndexForTag(string flag, out int startIndex)
+    {
+      string dublicate = "";
+      for (int i = 0; i < flag.Length; i++)
+      {
+        dublicate += flag[i];
+        foreach (string otherFlag in Flags.Keys)
+        {
+          if (otherFlag == flag)
+          {
+            continue;
+          }
+          if (otherFlag.StartsWith(dublicate))
+          {
+            break;
+          }
+          else
+          {
+            startIndex = i;
+            return true;
+          }
+        }
+      }
+      startIndex = -1;
+      return false;
+    }
+    private void AddTagForFlag(string flag, int startIndex)
+    {
+      int index = startIndex;
+      while (index < flag.Length)
+      {
+        string potentialTag = $"{flag[index]}";
+        if (!Tags.ContainsKey(potentialTag))
+        {
+          Tags.Add(potentialTag, flag);
+          return;
+        }
+        index++;
+      }
     }
   }
 }

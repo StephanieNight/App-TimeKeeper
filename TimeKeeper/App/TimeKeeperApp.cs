@@ -146,23 +146,9 @@ namespace TimeKeeper.App
 
 
       Terminal.AddCommand(command);
-      // Clockin
-      command = new CommandModel("clockin");
-      command.SetCommandDefaultAction(HandleClockIn);
-      command.SetCommandDescription("Clocks in for work, start a new day.");
-
-      Terminal.AddCommand(command);
-
 
       // Checkout
       command = new CommandModel("checkout");
-      command.SetCommandDefaultAction(HandleClockOut);
-      command.SetCommandDescription("Clocks out of work");
-
-      Terminal.AddCommand(command);
-
-      // Clockout
-      command = new CommandModel("clockout");
       command.SetCommandDefaultAction(HandleClockOut);
       command.SetCommandDescription("Clocks out of work");
 
