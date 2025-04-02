@@ -9,14 +9,13 @@ namespace TimeKeeper.App.Managers.Terminal
     public TerminalManeger()
     {
       var command = new CommandModel("help");
-      command.SetDescription("Prints all The usage messages of every registered command");
-      command.SetDefaultAction(HelpCommand);
+      command.SetCommandDescription("Prints all The usage messages of every registered command");
+      command.SetCommandDefaultAction(HelpCommand);
       AddCommand(command);
     }
 
     public void AddCommand(CommandModel command)
-    {
-      //command.AddFlag("--help", _ => { WriteLine(command.GetHelp()); WaitForKeypress(); },"Prints usage message for this command" );
+    {    
       commands.Add(command.Name,command);
     }
     public void ExecuteCommand(string[] parts)
@@ -40,15 +39,11 @@ namespace TimeKeeper.App.Managers.Terminal
         return;
       }
 
-      string flag = parts[1].ToLower();
+      string action = parts[1].ToLower();
       string[] flagArgs = parts.Length > 2 ? parts[2..] : new string[0];
-
-      if (!command.Flags.TryGetValue(flag, out Action<string[]> action))
-      {
-        Console.WriteLine($"Unknown flag: {flag}");
-        return;
+      if(!command.Invoke(action, flagArgs)){
+        WriteLine($"Cant Invoke action {action}, Incorect use of command {command.Name}");
       }
-      action.Invoke(flagArgs);
     }
     public void HelpCommand()
     {
