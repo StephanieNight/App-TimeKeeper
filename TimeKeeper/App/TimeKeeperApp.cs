@@ -19,8 +19,6 @@ namespace TimeKeeper.App
 
   // TODO: Add settings command for adding planned breaks. 
   // TODO: Add Edit break start, end and name.
-  // TODO: Status for work and on break. 
- 
 
   class TimeKeeperApp
   {
@@ -561,17 +559,11 @@ namespace TimeKeeper.App
             Terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             Terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             Terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-            if (day.IsOnBreak)
-            {
-              Terminal.WriteLine($"Staus          :  IS ON BREAK!");
-            }
+            Terminal.WriteLine($"Staus          :  {(day.IsOnBreak ? "IS ON BREAK!" : "WORKING!")}");
             Terminal.Seperator();
-
-
-
             // Breaks
             // get all completed Breaks and breaks that are in the past.
-            var breaks = day.Breaks.Where(b => b.IsCompleted && b.EndTime < DateTime.Now).ToArray();
+            var breaks = day.Breaks.Where(b => b.IsBreakPassed).ToArray();
 
             if (breaks.Length > 0)
             {
@@ -620,7 +612,7 @@ namespace TimeKeeper.App
 
       foreach (YearModel year in years)
       {
-        date = new DateOnly(year.Id,1,1);
+        date = new DateOnly(year.Id, 1, 1);
         // date = date.AddYears(year.Id - 1);
         Terminal.WriteLine($"[{date.ToString("yy")}] {year.Id}.");
 
@@ -632,7 +624,7 @@ namespace TimeKeeper.App
 
         foreach (MonthModel month in months)
         {
-          date = new DateOnly(year.Id,month.Id,1);
+          date = new DateOnly(year.Id, month.Id, 1);
           Terminal.WriteLine($"   [{month.Id:00}] {date.ToString("MMMM")}.");
 
           var days = month.GetDays();
