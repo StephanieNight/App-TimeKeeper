@@ -119,99 +119,85 @@ namespace TimeKeeper.App
     }
     void LoadCommands()
     {
-
       // Debug
       CommandModel command = new CommandModel("debug");
-      command.SetDefaultAction(HandleDebug);
-      command.SetDescription("Prints debug screen");
+      command.SetCommandDefaultAction(HandleDebug);
+      command.SetCommandDescription("Prints debug screen");
       Terminal.AddCommand(command);
 
       // Exit
       command = new CommandModel("exit");
-      command.SetDefaultAction(HandleExit);
-      command.SetDescription("Saves and Exits the application");
+      command.SetCommandDefaultAction(HandleExit);
+      command.SetCommandDescription("Saves and Exits the application");
       Terminal.AddCommand(command);
 
       // Update
       command = new CommandModel("update");
-      command.SetDefaultAction(HandleUpdateCalender);
-      command.SetDescription("Force Updates the total work performed and the deficit.");
+      command.SetCommandDefaultAction(HandleUpdateCalender);
+      command.SetCommandDescription("Force Updates the total work performed and the deficit.");
 
       Terminal.AddCommand(command);
 
 
       // Checkin
       command = new CommandModel("checkin");
-      command.SetDefaultAction(HandleClockIn);
-      command.SetDescription("Clocks in for work, start a new day.");
+      command.SetCommandDefaultAction(HandleClockIn);
+      command.SetCommandDescription("Clocks in for work, start a new day.");
 
 
       Terminal.AddCommand(command);
-      // Clockin
-      command = new CommandModel("clockin");
-      command.SetDefaultAction(HandleClockIn);
-      command.SetDescription("Clocks in for work, start a new day.");
-
-      Terminal.AddCommand(command);
-
 
       // Checkout
       command = new CommandModel("checkout");
-      command.SetDefaultAction(HandleClockOut);
-      command.SetDescription("Clocks out of work");
-
-      Terminal.AddCommand(command);
-
-      // Clockout
-      command = new CommandModel("clockout");
-      command.SetDefaultAction(HandleClockOut);
-      command.SetDescription("Clocks out of work");
+      command.SetCommandDefaultAction(HandleClockOut);
+      command.SetCommandDescription("Clocks out of work");
 
       Terminal.AddCommand(command);
 
       // Break
       command = new CommandModel("break");
-      command.SetDescription("Starts and ends breaks");
-      command.SetDefaultAction(HandleBreakToggle);
-      command.AddFlag("--name", HandleBreakStartWithName);
+      command.SetCommandDescription("Starts and ends breaks");
+      command.SetCommandDefaultAction(HandleBreakToggle);
+      command.AddFlag("name", HandleBreakStartWithName);
       //command.AddFlag("--start", HandleBreakSetStart);
       //command.AddFlag("--end", HandleBreakSetEnd);
+      command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
 
       // Settings
       command = new CommandModel("settings");
-      command.AddFlag("--showdeficit", HandleSettingsSetShowDeficit);
-      command.AddFlag("--showtotalwork", HandleSettingsSetShowTotalWork);
-      command.AddFlag("--keeper", HandleSettingsSetKeeper);
-      command.AddFlag("--rounding", HandleSettingsSetRounding);
-      command.AddFlag("--expectedworkWeek", HandleSettingsSetExpectedWorkWeek);
-
+      command.AddFlag("showdeficit", HandleSettingsSetShowDeficit);
+      command.AddFlag("showtotalwork", HandleSettingsSetShowTotalWork);
+      command.AddFlag("keeper", HandleSettingsSetKeeper);
+      command.AddFlag("rounding", HandleSettingsSetRounding);
+      command.AddFlag("expectedworkWeek", HandleSettingsSetExpectedWorkWeek);
+      command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
       // Day
       command = new CommandModel("month");
-      command.AddFlag("--get", HandleMonthGet);
+      command.AddFlag("get", HandleMonthGet);
       //command.AddFlag("--start", HandleDaySetStart);
       //command.AddFlag("--end", HandleDaySetEnd);
       //command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
-
+      command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
       // Day
       command = new CommandModel("day");
-      command.AddFlag("--get", HandleDayGet);
-      command.AddFlag("--start", HandleDaySetStart);
-      command.AddFlag("--end", HandleDaySetEnd);
-      command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
-
+      command.AddFlag("get", HandleDayGet);
+      command.AddFlag("start", HandleDaySetStart);
+      command.AddFlag("end", HandleDaySetEnd);
+      command.AddFlag("expectedworkday", HandleDaySetExpectedWorkDay);
+      command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
       // Days
       command = new CommandModel("days");
-      command.AddFlag("--limit", HandleDaysStatusWithLimit);
-      command.SetDefaultAction(HandleDaysStatus);
-
+      command.AddFlag("limit", HandleDaysStatusWithLimit);
+      command.GenerateTagsForFlags();
+      command.SetCommandDefaultAction(HandleDaysStatus);
       Terminal.AddCommand(command);
     }
 
@@ -630,12 +616,12 @@ namespace TimeKeeper.App
       var daysCount = 0;
       var monthsCount = 0;
       var yearsCount = years.Count;
+      DateOnly date;
 
       foreach (YearModel year in years)
       {
-
-        DateOnly date = new DateOnly();
-        date = date.AddYears(year.Id - 1);
+        date = new DateOnly(year.Id,1,1);
+        // date = date.AddYears(year.Id - 1);
         Terminal.WriteLine($"[{date.ToString("yy")}] {year.Id}.");
 
         var months = year.GetMonths();
@@ -646,7 +632,7 @@ namespace TimeKeeper.App
 
         foreach (MonthModel month in months)
         {
-          date = date.AddMonths(month.Id - 1);
+          date = new DateOnly(year.Id,month.Id,1);
           Terminal.WriteLine($"   [{month.Id:00}] {date.ToString("MMMM")}.");
 
           var days = month.GetDays();
