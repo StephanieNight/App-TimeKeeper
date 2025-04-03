@@ -17,8 +17,9 @@ namespace TimeKeeper.App
   /// </summary>
   /// 
 
-  // TODO: Add settings command for adding planned breaks. 
-  // TODO: Add Edit break start, end and name.
+  // TODO: Breaks - Add settings command for adding planned breaks. 
+  // TODO: Breaks - Add Edit break start, end and name.
+  // TODO: Space saving - Make Days load as well, with all the break objects and project objects this could save space as well.
 
   class TimeKeeperApp
   {
@@ -59,7 +60,6 @@ namespace TimeKeeper.App
 
       // Calendar.
       Calendar = new CalendarManager(Filesystem, Settings.Calendar);
-
     }
 
     // Start
