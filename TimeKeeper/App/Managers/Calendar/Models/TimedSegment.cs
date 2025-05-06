@@ -7,18 +7,6 @@ namespace TimeKeeper.App.Managers.Calendar.Models
     public string Name { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public bool IsPassed
-    {
-      get
-      {
-        if (IsCompleted && EndTime.Value < DateTime.Now)
-        {
-          return true;
-
-        }
-        return false;
-      }
-    }
     public bool IsCompleted
     {
       get
