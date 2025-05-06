@@ -15,20 +15,6 @@ namespace TimeKeeper.App.Managers.Calendar.Models
         return StartTime.HasValue && EndTime.HasValue;
       }
     }
-    public bool IsOnBreak
-    {
-      get
-      {
-        foreach (var b in Breaks)
-        {
-          if (b.IsCompleted == false)
-          {
-            return true;
-          }
-        }
-        return false;
-      }
-    }
     public TimeSpan Duration
     {
       get

@@ -22,11 +22,14 @@ namespace TimeKeeper.App.Managers.Calendar.Models
     {
       get
       {
-        if (IsPassed)
+        if(EndTime.HasValue)          
         {
           return EndTime.Value - StartTime.Value;
         }
-        return new TimeSpan();
+        else
+        {
+          return DateTime.Now - StartTime.Value;
+        }        
       }
     }
     public TimeSpan Elapsed
