@@ -3,12 +3,12 @@ using TimeKeeper.App;
 
 namespace TimeKeeper
 {
-    internal class program
+  internal class program
+  {
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            var app = new TimeKeeperApp();
-            app.Main();
-        }
+      var app = new TimeKeeperApp();
+      app.Main();
     }
+  }
 }
