@@ -13,10 +13,33 @@ namespace TimeKeeper.App.Managers.Calendar
     int ActiveMonthId = -1;
     int ActiveYearId = -1;
 
+    bool IsOnBreak = false;
+
     CalendarSettings Settings;
     FileSystemManager Filesystem;
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
+
+    public string Status
+    {
+      get
+      {
+        if (IsOnBreak)
+        {
+          return "On break!".ToUpper();
+        }
+        DayModel day = GetActiveDay();
+        if (day != null)
+        {
+          if (day.IsComplete && day.EndTime < DateTime.Now)
+          {
+            return "Day Completed!".ToUpper();
+          }
+          return "Working!".ToUpper();
+        }
+        return "";
+      }
+    }
 
     public CalendarManager(FileSystemManager filesystem, CalendarSettings calendarSettings)
     {
@@ -61,7 +84,6 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return DaysNotCompleted;
     }
-
 
     public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
     {
@@ -241,8 +263,6 @@ namespace TimeKeeper.App.Managers.Calendar
         ActivateDay(day.Id);
       }
     }
-
-
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -343,11 +363,12 @@ namespace TimeKeeper.App.Managers.Calendar
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        if (day.IsOnBreak)
+        if (IsOnBreak)
         {
           TimedSegment b = day.Breaks.Last();
           b.EndTime = GetRoundedTime(DateTime.Now);
           UpdateDeficit();
+          IsOnBreak = false;
         }
         else
         {
@@ -355,6 +376,7 @@ namespace TimeKeeper.App.Managers.Calendar
           b.Name = name;
           b.StartTime = GetRoundedTime(DateTime.Now);
           day.AddBreak(b);
+          IsOnBreak = true;
         }
       }
     }

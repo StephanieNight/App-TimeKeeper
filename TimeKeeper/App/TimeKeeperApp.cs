@@ -559,11 +559,11 @@ namespace TimeKeeper.App
             Terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             Terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             Terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
-            Terminal.WriteLine($"Staus          :  {(day.IsOnBreak ? "IS ON BREAK!" : "WORKING!")}");
+            Terminal.WriteLine($"Staus          :  {Calendar.Status}");
             Terminal.Seperator();
             // Breaks
             // get all completed Breaks and breaks that are in the past.
-            var breaks = day.Breaks.Where(b => b.IsPassed).ToArray();
+            var breaks = day.Breaks.ToArray();
 
             if (breaks.Length > 0)
             {
@@ -573,11 +573,11 @@ namespace TimeKeeper.App
                 var dayBreak = breaks[i];
                 if (i == 0)
                 {
-                  Terminal.WriteLine($"{dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                  Terminal.WriteLine($"{FormatedBreak(dayBreak)}");
                 }
                 else
                 {
-                  Terminal.WriteLine($"               :  {dayBreak.Duration.ToString("hh':'mm':'ss")} {dayBreak.Name}");
+                  Terminal.WriteLine($"               :  {FormatedBreak(dayBreak)}");
                 }
               }
               Terminal.Seperator();
@@ -708,6 +708,14 @@ namespace TimeKeeper.App
     string FormatedTimeSpan(TimeSpan timeSpan)
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
+    }
+
+    string FormatedBreak(TimedSegment daybreak)
+    {
+      string formatedString = $"{daybreak.Duration.ToString("hh':'mm':'ss")}";
+      formatedString += $" {daybreak.Name}";
+      formatedString += $" {(daybreak.EndTime > DateTime.Now ? "[PLANNED]" : "")}";
+      return formatedString;
     }
   }
 }
