@@ -1,11 +1,13 @@
-﻿namespace TimeKeeper.App.Managers.Calendar.Models
+﻿using System.Xml;
+
+namespace TimeKeeper.App.Managers.Calendar.Models
 {
-  class BreakModel
+  class TimedSegment
   {
     public string Name { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public bool IsBreakPassed
+    public bool IsPassed
     {
       get
       {
@@ -32,11 +34,22 @@
     {
       get
       {
-        if (IsBreakPassed)
+        if (IsPassed)
         {
           return EndTime.Value - StartTime.Value;
         }
         return new TimeSpan();
+      }
+    }
+    public TimeSpan Elapsed
+    {
+      get
+      {
+        if (IsCompleted)
+        {
+          return Duration;
+        }
+        return DateTime.Now - StartTime.Value;
       }
     }
   }
