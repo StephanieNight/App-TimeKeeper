@@ -74,9 +74,6 @@ namespace TimeKeeper.App
     {
       AppDomain.CurrentDomain.ProcessExit += new EventHandler(CurrentDomain_ProcessExit);
 
-      Calendar.LoadYears();
-      Calendar.ActivateToday();
-
       // Write welcome screen
       Terminal.WriteLine($"Welcome {Settings.KeeperName}");
       Terminal.Seperator();
