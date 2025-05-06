@@ -64,9 +64,9 @@ namespace TimeKeeper.App.Managers.Terminal
     }
     public void WaitForKeypress()
     {
+      ClearInputBuffer();
       Console.ReadKey();
     }
-
     public string GetInput()
     {
       return Console.ReadLine();
@@ -126,5 +126,4 @@ namespace TimeKeeper.App.Managers.Terminal
       return commands.ToArray();
     }
   }
-
 }
