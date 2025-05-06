@@ -7,7 +7,7 @@ namespace TimeKeeper.App.Managers.Calendar.Models
     public int Id { get; set; } = -1;
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public List<BreakModel> Breaks { get; set; } = new List<BreakModel>();
+    public List<TimedSegment> Breaks { get; set; } = new List<TimedSegment>();
     public bool IsComplete
     {
       get
@@ -63,11 +63,11 @@ namespace TimeKeeper.App.Managers.Calendar.Models
       }
     }
     // breaks
-    public void AddBreak(BreakModel breakModel)
+    public void AddBreak(TimedSegment breakModel)
     {
       Breaks.Add(breakModel);
     }
-    public BreakModel GetBreak(int Id)
+    public TimedSegment GetBreak(int Id)
     {
       return Breaks[Id];
     }

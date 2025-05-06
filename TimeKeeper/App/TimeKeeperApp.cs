@@ -563,7 +563,7 @@ namespace TimeKeeper.App
             Terminal.Seperator();
             // Breaks
             // get all completed Breaks and breaks that are in the past.
-            var breaks = day.Breaks.Where(b => b.IsBreakPassed).ToArray();
+            var breaks = day.Breaks.Where(b => b.IsPassed).ToArray();
 
             if (breaks.Length > 0)
             {

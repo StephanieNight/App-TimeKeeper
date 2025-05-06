@@ -80,15 +80,15 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return GetDefaultExpectedWorkDay(dayOfWeek);
     }
-    public BreakModel[] GetPlannedBreaks(DateOnly date)
+    public TimedSegment[] GetPlannedBreaks(DateOnly date)
     {
-      List<BreakModel> breaks = new List<BreakModel>();
+      List<TimedSegment> breaks = new List<TimedSegment>();
       
       foreach (var planned in Settings.PlannedBreaks)
       {
         if (planned.ActiveOnDays.Contains(date.DayOfWeek))
         {
-          BreakModel b = new BreakModel();
+          TimedSegment b = new TimedSegment();
           b.StartTime = new DateTime(date, planned.Start);
           b.EndTime = new DateTime(date, planned.End);
           b.Name = planned.Name;
@@ -345,13 +345,13 @@ namespace TimeKeeper.App.Managers.Calendar
         DayModel day = GetActiveDay();
         if (day.IsOnBreak)
         {
-          BreakModel b = day.Breaks.Last();
+          TimedSegment b = day.Breaks.Last();
           b.EndTime = GetRoundedTime(DateTime.Now);
           UpdateDeficit();
         }
         else
         {
-          BreakModel b = new BreakModel();
+          TimedSegment b = new TimedSegment();
           b.Name = name;
           b.StartTime = GetRoundedTime(DateTime.Now);
           day.AddBreak(b);
