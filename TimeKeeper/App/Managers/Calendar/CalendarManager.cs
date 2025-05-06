@@ -43,6 +43,7 @@ namespace TimeKeeper.App.Managers.Calendar
 
     public CalendarManager(FileSystemManager filesystem, CalendarSettings calendarSettings)
     {
+      PathsData += $"/{calendarSettings.Name}";
       Settings = calendarSettings;
       Filesystem = filesystem;
       Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
@@ -212,10 +213,12 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return false;
     }
+
     public void DeActivateDay()
     {
       ActiveDayId = -1;
     }
+
     public YearModel GetActiveYear()
     {
       if (Years.ContainsKey(ActiveYearId))
@@ -236,6 +239,7 @@ namespace TimeKeeper.App.Managers.Calendar
       if (month != null) { return month.GetDay(ActiveDayId); }
       return null;
     }
+
     public void AddYear(YearModel year, bool activate)
     {
       Years.Add(year.Id, year);
@@ -263,6 +267,7 @@ namespace TimeKeeper.App.Managers.Calendar
         ActivateDay(day.Id);
       }
     }
+    
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -312,6 +317,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
+    
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
@@ -330,25 +336,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-    //public void SetDayLunch(TimeSpan lunchTime)
-    //{
-    //  if (IsDayActive())
-    //  {
-    //    DayModel day = GetActiveDay();
-    //    day.Lunch = lunchTime;
-    //    UpdateDeficit();
-    //  }
-    //}
-    //public void SetDayLunchCompleted(TimeSpan lunchTime)
-    //{
-    //  if (IsDayActive())
-    //  {
-    //    DayModel day = GetActiveDay();
-    //    var to = TimeOnly.FromTimeSpan(lunchTime);
-    //    day.LunchTimeCompleted = to;
-    //    UpdateDeficit();
-    //  }
-    //}
+    
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -358,6 +346,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
+    
     public void ToggleBreak(string name = "break")
     {
       if (IsDayActive())
@@ -391,6 +380,7 @@ namespace TimeKeeper.App.Managers.Calendar
       dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
       return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Settings.Rounding));
     }
+    
     public void UpdateDeficit()
     {
       foreach (YearModel year in Years.Values)
@@ -408,10 +398,12 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       Settings.ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
     }
+    
     public void SetRounding(Rounding rounding)
     {
       Settings.Rounding = rounding;
     }
+    
     public void LoadYears()
     {
       var files = Filesystem.GetFilesInFolder($"{PathsData}");

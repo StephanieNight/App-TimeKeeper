@@ -28,6 +28,8 @@ namespace TimeKeeper.App
     CalendarManager Calendar;
     AppSettings Settings = new AppSettings();
     bool isRunning = true;
+    int ActiveProjectId = 0;
+    CalendarSettings Project = null;
 
     public string DataLocation
     {
@@ -59,7 +61,11 @@ namespace TimeKeeper.App
       LoadCommands();
 
       // Calendar.
-      Calendar = new CalendarManager(Filesystem, Settings.Calendar);
+      if (Settings.Projects.Count > 0)
+      {
+        Project = Settings.Projects[ActiveProjectId];
+        Calendar = new CalendarManager(Filesystem, Project);
+      }
     }
 
     // Start
@@ -109,10 +115,24 @@ namespace TimeKeeper.App
       if (Filesystem.FileExists(settingsFileName))
       {
         Settings = Filesystem.Deserialize<AppSettings>(settingsFileName, true);
+        return;
       }
+      Settings = new AppSettings(true);
+    }
+    void LoadProject(int id)
+    {
+      ActiveProjectId = id;
+      Project = Settings.Projects[ActiveProjectId];
+      Calendar = new CalendarManager(Filesystem, Project);
+    }
+    bool IsIndexValidProject(int id)
+    {
+      return Settings.Projects.Count > id && id > 0;
     }
     void SaveSettings()
     {
+      Calendar.Save();
+      Settings.Projects[ActiveProjectId] = Project;
       Filesystem.Serialize<AppSettings>("settings.json", Settings);
     }
     void LoadCommands()
@@ -136,6 +156,17 @@ namespace TimeKeeper.App
 
       Terminal.AddCommand(command);
 
+      // Project
+      command = new CommandModel("project");
+      //command.SetCommandDescription("Starts and ends breaks");
+      //command.SetCommandDefaultAction(HandleBreakToggle);
+      command.AddFlag("get", HandleProjectGet);
+      command.AddFlag("create", HandleProjectCreate);
+      command.AddFlag("name", HandleProjectSetName);
+      command.AddFlag("list", HandleProjectList);
+      command.GenerateTagsForFlags();
+
+      Terminal.AddCommand(command);
 
       // Checkin
       command = new CommandModel("checkin");
@@ -157,8 +188,6 @@ namespace TimeKeeper.App
       command.SetCommandDescription("Starts and ends breaks");
       command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("name", HandleBreakStartWithName);
-      //command.AddFlag("--start", HandleBreakSetStart);
-      //command.AddFlag("--end", HandleBreakSetEnd);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -176,9 +205,6 @@ namespace TimeKeeper.App
       // Day
       command = new CommandModel("month");
       command.AddFlag("get", HandleMonthGet);
-      //command.AddFlag("--start", HandleDaySetStart);
-      //command.AddFlag("--end", HandleDaySetEnd);
-      //command.AddFlag("--expectedworkday", HandleDaySetExpectedWorkDay);
       command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
@@ -204,7 +230,6 @@ namespace TimeKeeper.App
     void CurrentDomain_ProcessExit(object sender, EventArgs e)
     {
       Terminal.WriteLine("Saving...");
-      Calendar.Save();
       SaveSettings();
       Terminal.WriteLine("Done");
       Thread.Sleep(500);
@@ -245,23 +270,23 @@ namespace TimeKeeper.App
       switch (rounding)
       {
         case (int)Rounding.FiveMinutes:
-          Settings.Calendar.Rounding = Rounding.FiveMinutes;
+          Settings.Projects[ActiveProjectId].Rounding = Rounding.FiveMinutes;
           break;
         case (int)Rounding.TenMinutes:
-          Settings.Calendar.Rounding = Rounding.TenMinutes;
+          Settings.Projects[ActiveProjectId].Rounding = Rounding.TenMinutes;
           break;
         case (int)Rounding.FifteenMinutes:
-          Settings.Calendar.Rounding = Rounding.FifteenMinutes;
+          Settings.Projects[ActiveProjectId].Rounding = Rounding.FifteenMinutes;
           break;
         case (int)Rounding.ThirtyMinutes:
-          Settings.Calendar.Rounding = Rounding.ThirtyMinutes;
+          Settings.Projects[ActiveProjectId].Rounding = Rounding.ThirtyMinutes;
           break;
         case (int)Rounding.None:
         default:
-          Settings.Calendar.Rounding = Rounding.None;
+          Settings.Projects[ActiveProjectId].Rounding = Rounding.None;
           break;
       }
-      Calendar.SetRounding(Settings.Calendar.Rounding);
+      Calendar.SetRounding(Settings.Projects[ActiveProjectId].Rounding);
       SaveSettings();
     }
     void HandleSettingsSetShowDeficit(string[] args)
@@ -322,54 +347,55 @@ namespace TimeKeeper.App
       {
         if (TimeSpan.TryParse(args[0], out TimeSpan weekdays))
         {
-          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
-          return;
+          Project.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Friday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
         }
       }
       // Set Mon-Thurs, friday and weekend off
-      if (args.Length == 2)
+      else if (args.Length == 2)
       {
         if (TimeSpan.TryParse(args[0], out TimeSpan weekdays)
         && TimeSpan.TryParse(args[1], out TimeSpan friday))
         {
-          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          Project.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+
           return;
         }
       }
       // Set Mon-Thurs, friday and Weekend
-      if (args.Length == 3)
+      else if (args.Length == 3)
       {
         if (TimeSpan.TryParse(args[0], out TimeSpan weekdays)
         && TimeSpan.TryParse(args[1], out TimeSpan friday)
         && TimeSpan.TryParse(args[2], out TimeSpan weekend))
         {
-          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, weekend);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, weekend);
+          Project.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Monday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Thursday, weekdays);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Saturday, weekend);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Sunday, weekend);
+
           return;
         }
       }
       // Set mon,tue,wens,thurs,fri and weekend off
-      if (args.Length == 5)
+      else if (args.Length == 5)
       {
         if (TimeSpan.TryParse(args[0], out TimeSpan monday)
          && TimeSpan.TryParse(args[1], out TimeSpan tuesday)
@@ -377,19 +403,20 @@ namespace TimeKeeper.App
          && TimeSpan.TryParse(args[3], out TimeSpan thursday)
          && TimeSpan.TryParse(args[4], out TimeSpan friday))
         {
-          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+          Project.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Saturday, new TimeSpan());
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Sunday, new TimeSpan());
+
           return;
         }
       }
       // set all days in the week
-      if (args.Length == 7)
+      else if (args.Length == 7)
       {
         if (TimeSpan.TryParse(args[0], out TimeSpan monday)
          && TimeSpan.TryParse(args[1], out TimeSpan tuesday)
@@ -399,14 +426,15 @@ namespace TimeKeeper.App
          && TimeSpan.TryParse(args[5], out TimeSpan saturday)
          && TimeSpan.TryParse(args[6], out TimeSpan sunday))
         {
-          Settings.Calendar.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Saturday, saturday);
-          Settings.Calendar.ExpectedWorkWeek.Add(DayOfWeek.Sunday, sunday);
+          Project.ExpectedWorkWeek = new Dictionary<DayOfWeek, TimeSpan>();
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Monday, monday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Tuesday, tuesday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Wednesday, wednesday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Thursday, thursday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Friday, friday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Saturday, saturday);
+          Project.ExpectedWorkWeek.Add(DayOfWeek.Sunday, sunday);
+
           return;
         }
       }
@@ -442,7 +470,7 @@ namespace TimeKeeper.App
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
       {
-        Terminal.WriteLine("Usage: day");
+        Terminal.WriteLine("Usage: project");
         return;
       }
       Calendar.ActivateDay(dayID);
@@ -450,6 +478,7 @@ namespace TimeKeeper.App
       {
         Terminal.WriteLine("No day loaded.");
       }
+
     }
     void HandleDaySetStart(string[] args)
     {
@@ -493,11 +522,57 @@ namespace TimeKeeper.App
     }
     void HandleBreakSetStart(string[] args) { }
     void HandleBreakSetEnd(string[] args) { }
+    void HandleProjectGet(string[] args)
+    {
+      if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      if (IsIndexValidProject(dayID))
+      {
+        SaveSettings();
+        LoadProject(dayID);
+        return;
+      }
+      Terminal.WriteLine($"Index :{dayID} invalid");
+      Terminal.WaitForKeypress();
+    }
+    void HandleProjectCreate(string[] args)
+    {
+      if (args.Length == 0)
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      if (Filesystem.DirectoryExists(args[0]))
+      {
+        Terminal.WriteLine("Project Name must be unique");
+        Terminal.WaitForKeypress();
+        return;
+      }
+      var calender = new CalendarSettings();
+      calender.Name = args[0];
+      Settings.Projects.Add(calender);
+      SaveSettings();
+      LoadProject(Settings.Projects.IndexOf(calender));
+    }
+    void HandleProjectSetName(string[] args)
+    {
 
+    }
+    void HandleProjectList(string[] args)
+    {
+
+    }
     // Screens. 
     // ------------------------------------------------------------
     void MainScreen()
     {
+
+      Terminal.WriteLine($"Project : {Project.Name}");
+      Terminal.Seperator();
+
       var incompleteDays = Calendar.GetIncomplteDays();
       if (incompleteDays.Count > 0)
       {
@@ -600,7 +675,7 @@ namespace TimeKeeper.App
       p.Dispose();
       Terminal.Seperator();
       Terminal.WriteLine($"Keeper name: {Settings.KeeperName}");
-      Terminal.WriteLine($"Rounding   : {Settings.Calendar.Rounding}");
+      Terminal.WriteLine($"Rounding   : {Project.Rounding}");
       Terminal.WaitForKeypress();
       Terminal.Seperator();
       var years = Calendar.GetYears();
@@ -709,7 +784,6 @@ namespace TimeKeeper.App
     {
       return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
     }
-
     string FormatedBreak(TimedSegment daybreak)
     {
       string formatedString = $"{daybreak.Duration.ToString("hh':'mm':'ss")}";
