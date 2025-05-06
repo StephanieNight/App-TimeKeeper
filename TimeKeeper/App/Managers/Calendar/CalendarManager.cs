@@ -47,6 +47,8 @@ namespace TimeKeeper.App.Managers.Calendar
       Settings = calendarSettings;
       Filesystem = filesystem;
       Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
+      LoadYears();
+      ActivateToday();
     }
 
     public List<DayModel> GetDays()
