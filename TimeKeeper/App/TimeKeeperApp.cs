@@ -650,13 +650,14 @@ namespace TimeKeeper.App
                 else
                 {
                   Terminal.WriteLine($"               :  {FormatedBreak(dayBreak)}");
-                }
+                }              
               }
+              Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(day.TotalBreaks)}");
               Terminal.Seperator();
             }
 
-            Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
-            Terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
+            Terminal.WriteLine($"Total Work     : { FormatedActualWorkDay(day)}");        
+            Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");            
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
         }
