@@ -13,16 +13,42 @@ namespace TimeKeeper.App.Managers.Calendar
     int ActiveMonthId = -1;
     int ActiveYearId = -1;
 
+    bool IsOnBreak = false;
+
     CalendarSettings Settings;
     FileSystemManager Filesystem;
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
+    public string Status
+    {
+      get
+      {
+        if (IsOnBreak)
+        {
+          return "On break!".ToUpper();
+        }
+        DayModel day = GetActiveDay();
+        if (day != null)
+        {
+          if (day.IsComplete && day.EndTime < DateTime.Now)
+          {
+            return "Day Completed!".ToUpper();
+          }
+          return "Working!".ToUpper();
+        }
+        return "";
+      }
+    }
+
     public CalendarManager(FileSystemManager filesystem, CalendarSettings calendarSettings)
     {
+      PathsData += $"/{calendarSettings.Name}";
       Settings = calendarSettings;
       Filesystem = filesystem;
       Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
+      LoadYears();
+      ActivateToday();
     }
 
     public List<DayModel> GetDays()
@@ -62,7 +88,6 @@ namespace TimeKeeper.App.Managers.Calendar
       return DaysNotCompleted;
     }
 
-
     public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
     {
       // Load saved expected work week into dictionary.
@@ -80,15 +105,15 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return GetDefaultExpectedWorkDay(dayOfWeek);
     }
-    public BreakModel[] GetPlannedBreaks(DateOnly date)
+    public TimedSegment[] GetPlannedBreaks(DateOnly date)
     {
-      List<BreakModel> breaks = new List<BreakModel>();
+      List<TimedSegment> breaks = new List<TimedSegment>();
       
       foreach (var planned in Settings.PlannedBreaks)
       {
         if (planned.ActiveOnDays.Contains(date.DayOfWeek))
         {
-          BreakModel b = new BreakModel();
+          TimedSegment b = new TimedSegment();
           b.StartTime = new DateTime(date, planned.Start);
           b.EndTime = new DateTime(date, planned.End);
           b.Name = planned.Name;
@@ -190,10 +215,12 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return false;
     }
+
     public void DeActivateDay()
     {
       ActiveDayId = -1;
     }
+
     public YearModel GetActiveYear()
     {
       if (Years.ContainsKey(ActiveYearId))
@@ -214,6 +241,7 @@ namespace TimeKeeper.App.Managers.Calendar
       if (month != null) { return month.GetDay(ActiveDayId); }
       return null;
     }
+
     public void AddYear(YearModel year, bool activate)
     {
       Years.Add(year.Id, year);
@@ -241,8 +269,7 @@ namespace TimeKeeper.App.Managers.Calendar
         ActivateDay(day.Id);
       }
     }
-
-
+    
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -292,6 +319,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
+    
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
@@ -310,25 +338,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-    //public void SetDayLunch(TimeSpan lunchTime)
-    //{
-    //  if (IsDayActive())
-    //  {
-    //    DayModel day = GetActiveDay();
-    //    day.Lunch = lunchTime;
-    //    UpdateDeficit();
-    //  }
-    //}
-    //public void SetDayLunchCompleted(TimeSpan lunchTime)
-    //{
-    //  if (IsDayActive())
-    //  {
-    //    DayModel day = GetActiveDay();
-    //    var to = TimeOnly.FromTimeSpan(lunchTime);
-    //    day.LunchTimeCompleted = to;
-    //    UpdateDeficit();
-    //  }
-    //}
+    
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -338,23 +348,26 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
+    
     public void ToggleBreak(string name = "break")
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        if (day.IsOnBreak)
+        if (IsOnBreak)
         {
-          BreakModel b = day.Breaks.Last();
+          TimedSegment b = day.Breaks.Last();
           b.EndTime = GetRoundedTime(DateTime.Now);
           UpdateDeficit();
+          IsOnBreak = false;
         }
         else
         {
-          BreakModel b = new BreakModel();
+          TimedSegment b = new TimedSegment();
           b.Name = name;
           b.StartTime = GetRoundedTime(DateTime.Now);
           day.AddBreak(b);
+          IsOnBreak = true;
         }
       }
     }
@@ -369,6 +382,7 @@ namespace TimeKeeper.App.Managers.Calendar
       dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
       return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Settings.Rounding));
     }
+    
     public void UpdateDeficit()
     {
       foreach (YearModel year in Years.Values)
@@ -386,10 +400,12 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       Settings.ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
     }
+    
     public void SetRounding(Rounding rounding)
     {
       Settings.Rounding = rounding;
     }
+    
     public void LoadYears()
     {
       var files = Filesystem.GetFilesInFolder($"{PathsData}");
