@@ -174,6 +174,7 @@ namespace TimeKeeper.App.Managers.Calendar
       ActivateYear(today.Year);
       ActivateMonth(today.Month);
       ActivateDay(today.Day);
+
     }
     public bool ActivateYear(int yearId)
     {
@@ -208,7 +209,14 @@ namespace TimeKeeper.App.Managers.Calendar
         {
           if (GetActiveMonth().ContainDayId(dayId))
           {
+            // Update index
             ActiveDayId = dayId;
+            // load day to set state.
+            DayModel day = GetActiveDay();
+            if(day.Breaks.Count >0){
+              // if the last break is not completed then we are still on break.
+              IsOnBreak = !day.Breaks.Last().IsCompleted;              
+            }
             return true;
           }
         }
