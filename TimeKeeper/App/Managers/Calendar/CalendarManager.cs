@@ -1,10 +1,11 @@
-using TimeKeeper.App.Models;
-using TimeKeeper.App.Enums;
-using TimeKeeper.App.Extensions;
+using TimeKeeper.App.Common.Extensions;
+using TimeKeeper.App.Common.Filesystem;
+using TimeKeeper.App.Managers.Calendar.Enums;
+using TimeKeeper.App.Managers.Calendar.Models;
 
-namespace TimeKeeper.App.Handlers
+namespace TimeKeeper.App.Managers.Calendar
 {
-  class CalendarHandler
+  class CalendarManager
   {
     string PathsData = "Data";
 
@@ -12,17 +13,42 @@ namespace TimeKeeper.App.Handlers
     int ActiveMonthId = -1;
     int ActiveYearId = -1;
 
-    FileHandler filesystem;
-    Rounding Rounding;
+    bool IsOnBreak = false;
+
+    CalendarSettings Settings;
+    FileSystemManager Filesystem;
 
     Dictionary<int, YearModel> Years = new Dictionary<int, YearModel>();
 
-    Dictionary<DayOfWeek, TimeSpan> ExpectedWorkWeek { get; set; } = new Dictionary<DayOfWeek, TimeSpan>();
-
-    public CalendarHandler(FileHandler filehandler)
+    public string Status
     {
-      filesystem = filehandler;
-      filesystem.InitializeFolder($"{filesystem.BasePath}/{PathsData}");
+      get
+      {
+        if (IsOnBreak)
+        {
+          return "On break!".ToUpper();
+        }
+        DayModel day = GetActiveDay();
+        if (day != null)
+        {
+          if (day.IsComplete && day.EndTime < DateTime.Now)
+          {
+            return "Day Completed!".ToUpper();
+          }
+          return "Working!".ToUpper();
+        }
+        return "";
+      }
+    }
+
+    public CalendarManager(FileSystemManager filesystem, CalendarSettings calendarSettings)
+    {
+      PathsData += $"/{calendarSettings.Name}";
+      Settings = calendarSettings;
+      Filesystem = filesystem;
+      Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
+      LoadYears();
+      ActivateToday();
     }
 
     public List<DayModel> GetDays()
@@ -62,20 +88,39 @@ namespace TimeKeeper.App.Handlers
       return DaysNotCompleted;
     }
 
-
-    public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek){
+    public void AddExpectedWorkWeek(Dictionary<DayOfWeek, TimeSpan> expectedWorkWeek)
+    {
       // Load saved expected work week into dictionary.
       foreach (var work in expectedWorkWeek)
       {
-        ExpectedWorkWeek.Add(work.Key, work.Value);
+        Settings.ExpectedWorkWeek.Add(work.Key, work.Value);
       }
     }
 
-    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek){
-      if(ExpectedWorkWeek.ContainsKey(dayOfWeek)){
-        return ExpectedWorkWeek[dayOfWeek];
+    public TimeSpan GetExpectedWorkDay(DayOfWeek dayOfWeek)
+    {
+      if (Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek))
+      {
+        return Settings.ExpectedWorkWeek[dayOfWeek];
       }
       return GetDefaultExpectedWorkDay(dayOfWeek);
+    }
+    public TimedSegment[] GetPlannedBreaks(DateOnly date)
+    {
+      List<TimedSegment> breaks = new List<TimedSegment>();
+      
+      foreach (var planned in Settings.PlannedBreaks)
+      {
+        if (planned.ActiveOnDays.Contains(date.DayOfWeek))
+        {
+          TimedSegment b = new TimedSegment();
+          b.StartTime = new DateTime(date, planned.Start);
+          b.EndTime = new DateTime(date, planned.End);
+          b.Name = planned.Name;
+          breaks.Add(b);
+        }
+      }
+      return breaks.ToArray();
     }
     public TimeSpan GetDefaultExpectedWorkDay(DayOfWeek dayOfWeek)
     {
@@ -170,10 +215,12 @@ namespace TimeKeeper.App.Handlers
       }
       return false;
     }
+
     public void DeActivateDay()
     {
       ActiveDayId = -1;
     }
+
     public YearModel GetActiveYear()
     {
       if (Years.ContainsKey(ActiveYearId))
@@ -194,6 +241,7 @@ namespace TimeKeeper.App.Handlers
       if (month != null) { return month.GetDay(ActiveDayId); }
       return null;
     }
+
     public void AddYear(YearModel year, bool activate)
     {
       Years.Add(year.Id, year);
@@ -221,6 +269,7 @@ namespace TimeKeeper.App.Handlers
         ActivateDay(day.Id);
       }
     }
+    
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -254,6 +303,7 @@ namespace TimeKeeper.App.Handlers
           var startTime = GetRoundedTime(startDateTime);
           day.StartTime = startTime;
           day.ExpectedWorkDay = GetExpectedWorkDay(startTime.DayOfWeek);
+          day.Breaks.AddRange(GetPlannedBreaks(DateOnly.FromDateTime(startTime)));
           day.Id = startDateTime.Day;
           AddDay(day, true);
         }
@@ -269,6 +319,7 @@ namespace TimeKeeper.App.Handlers
         UpdateDeficit();
       }
     }
+    
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
@@ -287,25 +338,7 @@ namespace TimeKeeper.App.Handlers
         UpdateDeficit();
       }
     }
-    //public void SetDayLunch(TimeSpan lunchTime)
-    //{
-    //  if (IsDayActive())
-    //  {
-    //    DayModel day = GetActiveDay();
-    //    day.Lunch = lunchTime;
-    //    UpdateDeficit();
-    //  }
-    //}
-    //public void SetDayLunchCompleted(TimeSpan lunchTime)
-    //{
-    //  if (IsDayActive())
-    //  {
-    //    DayModel day = GetActiveDay();
-    //    var to = TimeOnly.FromTimeSpan(lunchTime);
-    //    day.LunchTimeCompleted = to;
-    //    UpdateDeficit();
-    //  }
-    //}
+    
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -315,33 +348,41 @@ namespace TimeKeeper.App.Handlers
         UpdateDeficit();
       }
     }
+    
     public void ToggleBreak(string name = "break")
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
-        if (day.IsOnBreak)
+        if (IsOnBreak)
         {
-          day.EndBreak(GetRoundedTime(DateTime.Now));
+          TimedSegment b = day.Breaks.Last();
+          b.EndTime = GetRoundedTime(DateTime.Now);
           UpdateDeficit();
+          IsOnBreak = false;
         }
         else
         {
-          day.StartBreak(GetRoundedTime(DateTime.Now),name);
+          TimedSegment b = new TimedSegment();
+          b.Name = name;
+          b.StartTime = GetRoundedTime(DateTime.Now);
+          day.AddBreak(b);
+          IsOnBreak = true;
         }
       }
     }
-    
+
     private DateTime GetRoundedTime(DateTime dateTime)
     {
-      if (Rounding == Rounding.None)
+      if (Settings.Rounding == Rounding.None)
       {
         return dateTime;
       }
       // Round Seconds
       dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
-      return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Rounding));
+      return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Settings.Rounding));
     }
+    
     public void UpdateDeficit()
     {
       foreach (YearModel year in Years.Values)
@@ -352,23 +393,25 @@ namespace TimeKeeper.App.Handlers
 
     public void SetExpectedWorkDay(DayOfWeek dayOfWeek, TimeSpan timeSpan)
     {
-      if (ExpectedWorkWeek.ContainsKey(dayOfWeek))
+      if (Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek))
       {
-        ExpectedWorkWeek[dayOfWeek] = timeSpan;
+        Settings.ExpectedWorkWeek[dayOfWeek] = timeSpan;
         return;
       }
-      ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
+      Settings.ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
     }
+    
     public void SetRounding(Rounding rounding)
     {
-      Rounding = rounding;
+      Settings.Rounding = rounding;
     }
+    
     public void LoadYears()
     {
-      var files = filesystem.GetFilesInFolder($"{PathsData}");
+      var files = Filesystem.GetFilesInFolder($"{PathsData}");
       foreach (var yearFile in files)
       {
-        YearModel year = filesystem.Deserialize<YearModel>(yearFile);
+        YearModel year = Filesystem.Deserialize<YearModel>(yearFile);
         Years.Add(year.Id, year);
       }
     }
@@ -376,10 +419,10 @@ namespace TimeKeeper.App.Handlers
     {
       if (IsYearActive())
       {
-        var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
+        var files = Filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
         foreach (var monthFile in files)
         {
-          MonthModel month = filesystem.Deserialize<MonthModel>(monthFile);
+          MonthModel month = Filesystem.Deserialize<MonthModel>(monthFile);
           Years[ActiveYearId].AddMonth(month);
         }
       }
@@ -388,20 +431,20 @@ namespace TimeKeeper.App.Handlers
     {
       if (IsMonthActive())
       {
-        var files = filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
+        var files = Filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
         foreach (var dayfile in files)
         {
-          DayModel day = filesystem.Deserialize<DayModel>(dayfile);
+          DayModel day = Filesystem.Deserialize<DayModel>(dayfile);
           // Backward compatability for adding Index
           if (day.Id == -1)
           {
-            day.Id = Int32.Parse(Path.GetFileNameWithoutExtension(dayfile));
+            day.Id = int.Parse(Path.GetFileNameWithoutExtension(dayfile));
           }
           // Backward compatability for exprected workday not being configuratble.
           if (day.ExpectedWorkDay == new TimeSpan() && day.StartTime.HasValue)
           {
             day.ExpectedWorkDay = GetExpectedWorkDay(day.StartTime.Value.DayOfWeek);
-          }         
+          }
           Years[ActiveYearId].GetMonth(ActiveMonthId).AddDay(day);
         }
       }
@@ -410,13 +453,13 @@ namespace TimeKeeper.App.Handlers
     {
       foreach (YearModel year in Years.Values)
       {
-        filesystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
+        Filesystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
         foreach (MonthModel month in year.GetMonths())
         {
-          filesystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
+          Filesystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
           foreach (DayModel day in month.GetDays())
           {
-            filesystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
+            Filesystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
           }
         }
       }

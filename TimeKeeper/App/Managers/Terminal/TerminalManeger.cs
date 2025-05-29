@@ -1,19 +1,28 @@
+using TimeKeeper.App.Managers.Terminal.Models;
 
-namespace TimeKeeper.App.Handlers
+namespace TimeKeeper.App.Managers.Terminal
 {
-  class TerminalHandler
+  class TerminalManeger
   {
-    Dictionary<string, Command> commands = new Dictionary<string, Command>();
+    Dictionary<string, CommandModel> commands = new Dictionary<string, CommandModel>();
 
-    public void AddCommand(Command command)
+    public TerminalManeger()
     {
+      var command = new CommandModel("help");
+      command.SetCommandDescription("Prints all The usage messages of every registered command");
+      command.SetCommandDefaultAction(HelpCommand);
+      AddCommand(command);
+    }
+
+    public void AddCommand(CommandModel command)
+    {    
       commands.Add(command.Name,command);
     }
     public void ExecuteCommand(string[] parts)
     {
       string commandName = parts[0].ToLower();
 
-      if (!commands.TryGetValue(commandName, out Command command))
+      if (!commands.TryGetValue(commandName, out CommandModel command))
       {
         Console.WriteLine($"Unknown command: {commandName}");
         return;
@@ -25,21 +34,29 @@ namespace TimeKeeper.App.Handlers
           command.DefaultAction?.Invoke(); // Run default action if available
           return;
         }
-        Console.WriteLine($"Available flags for {commandName}: {string.Join(", ", command.Flags.Keys)}");
+        WriteLine(command.GetHelp());
+        WaitForKeypress();
         return;
       }
 
-      string flag = parts[1].ToLower();
+      string action = parts[1].ToLower();
       string[] flagArgs = parts.Length > 2 ? parts[2..] : new string[0];
-
-      if (!command.Flags.TryGetValue(flag, out Action<string[]> action))
-      {
-        Console.WriteLine($"Unknown flag: {flag}");
-        return;
+      if(!command.Invoke(action, flagArgs)){
+        WriteLine($"Cant Invoke action {action}, Incorect use of command {command.Name}");
       }
-      action.Invoke(flagArgs);
     }
-
+    public void HelpCommand()
+    {
+      foreach(var command in commands.Values)
+      {
+        if(command.Name == "help")
+        {
+          continue;
+        }
+        WriteLine(command.GetHelp());
+      }
+      WaitForKeypress();
+    }
     private void ClearInputBuffer()
     {
       while (Console.KeyAvailable)
@@ -47,9 +64,9 @@ namespace TimeKeeper.App.Handlers
     }
     public void WaitForKeypress()
     {
+      ClearInputBuffer();
       Console.ReadKey();
     }
-
     public string GetInput()
     {
       return Console.ReadLine();
@@ -58,7 +75,7 @@ namespace TimeKeeper.App.Handlers
     {
       Console.Write(value);
     }
-    public void WriteLine(string value)
+    public void WriteLine(string value="")
     {
       Console.WriteLine(value);
     }
@@ -109,5 +126,4 @@ namespace TimeKeeper.App.Handlers
       return commands.ToArray();
     }
   }
-
 }
