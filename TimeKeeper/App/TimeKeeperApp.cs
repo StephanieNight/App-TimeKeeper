@@ -652,12 +652,15 @@ namespace TimeKeeper.App
                   Terminal.WriteLine($"               :  {FormatedBreak(dayBreak)}");
                 }              
               }
-              Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(day.TotalBreaks)}");
+              
               Terminal.Seperator();
             }
-
-            Terminal.WriteLine($"Total Work     : { FormatedActualWorkDay(day)}");        
+            Terminal.WriteLine($"Total Session  :  {day.Duration}" );
+            Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(-day.TotalBreaks)}");
+            Terminal.Seperator();
+            Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");        
             Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");            
+            Terminal.Seperator();
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
         }
