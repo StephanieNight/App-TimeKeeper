@@ -1,11 +1,11 @@
-﻿namespace TimeKeeper.App.Managers.Calendar.Models
+﻿namespace TimeKeeper.Models
 {
   class MonthModel
   {
     private Dictionary<int, DayModel> Days = new Dictionary<int, DayModel>();
     public int Id { get; set; } = -1;
     public TimeSpan Deficit { get; set; }
-    public TimeSpan Worked { get; set; }
+    public TimeSpan WorkedHours { get; set; }
     public List<DayModel> GetDays()
     {
       return Days.Values.ToList();
@@ -38,12 +38,12 @@
         {
           if (day.IsComplete)
           {
-            deficit += day.Deficit;
-            worked += day.Worked;
+            deficit += day.GetDeficit();
+            worked += day.GetActualWorkDay();
           }
         }
         Deficit = deficit;
-        Worked = worked;
+        WorkedHours = worked;
       }
     }
     public bool ContainDayId(int id)

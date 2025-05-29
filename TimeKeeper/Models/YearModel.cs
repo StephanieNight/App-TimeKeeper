@@ -1,4 +1,4 @@
-﻿namespace TimeKeeper.App.Managers.Calendar.Models
+﻿namespace TimeKeeper.Models
 {
   class YearModel
   {
@@ -40,7 +40,7 @@
         {
           month.UpdateStatus();
           deficit += month.Deficit;
-          worked += month.Worked;
+          worked += month.WorkedHours;
         }
         Deficit = deficit;
         WorkedHours = worked;

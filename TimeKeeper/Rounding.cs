@@ -1,4 +1,4 @@
-﻿namespace TimeKeeper.App.Managers.Calendar.Enums
+﻿namespace TimeKeeper
 {
   enum Rounding
   {
