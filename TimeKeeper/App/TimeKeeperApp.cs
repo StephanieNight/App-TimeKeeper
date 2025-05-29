@@ -31,6 +31,8 @@ namespace TimeKeeper.App
     int ActiveProjectId = 0;
     CalendarSettings Project = null;
 
+    string version = "1.0.0";
+
     public string DataLocation
     {
       get
@@ -77,12 +79,14 @@ namespace TimeKeeper.App
       // Write welcome screen
       Terminal.WriteLine($"Welcome {Settings.KeeperName}");
       Terminal.Seperator();
-      Terminal.WriteLine($"Current date : {DateTime.Now.ToString("MMMM dd, yyyy")}");
+      Terminal.WriteLine($"Current date       : {DateTime.Now.ToString("MMMM dd, yyyy")}");      
+      Terminal.WriteLine($"TimeKeeper version : {version}");
       Terminal.Seperator();
       Terminal.WriteLine($"Loaded {Calendar.GetDays().Count} days");
       Terminal.WriteLine($"{Calendar.GetIncomplteDays().Count} is incomplete");
       Terminal.Seperator();
-      Thread.Sleep(1500);
+      
+      Thread.Sleep(2000);
 
       // Main Loop
       while (isRunning)
@@ -650,13 +654,17 @@ namespace TimeKeeper.App
                 else
                 {
                   Terminal.WriteLine($"               :  {FormatedBreak(dayBreak)}");
-                }
+                }              
               }
+              
               Terminal.Seperator();
             }
-
-            Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");
-            Terminal.WriteLine($"Actual worked  : {FormatedActualWorkDay(day)}");
+            Terminal.WriteLine($"Total Session  :  {day.Duration}" );
+            Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(-day.TotalBreaks)}");
+            Terminal.Seperator();
+            Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");        
+            Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");            
+            Terminal.Seperator();
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
         }
