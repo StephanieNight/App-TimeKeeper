@@ -1,11 +1,11 @@
-﻿namespace TimeKeeper.Models
+﻿namespace TimeKeeper.App.Managers.Calendar.Models
 {
   class MonthModel
   {
-    private Dictionary<int, DayModel> Days = new Dictionary<int, DayModel>();
+    private Dictionary<int, DayModel> Days = new Dictionary<int, DayModel>();    
     public int Id { get; set; } = -1;
     public TimeSpan Deficit { get; set; }
-    public TimeSpan WorkedHours { get; set; }
+    public TimeSpan Worked { get; set; }
     public List<DayModel> GetDays()
     {
       return Days.Values.ToList();
@@ -16,21 +16,21 @@
     }
     public bool AddDay(DayModel day)
     {
-      if (Days.ContainsKey(day.Id))
+      if(Days.ContainsKey(day.Id))
       {
-        Days[day.Id] = day;
+        Days[day.Id] =  day;
       }
       else
       {
         Days.Add(day.Id, day);
       }
-
+       
       UpdateStatus();
       return true;
     }
     public void UpdateStatus()
     {
-      if (Days.Count > 0)
+      if(Days.Count > 0)
       {
         TimeSpan deficit = TimeSpan.Zero;
         TimeSpan worked = TimeSpan.Zero;
@@ -38,17 +38,18 @@
         {
           if (day.IsComplete)
           {
-            deficit += day.GetDeficit();
-            worked += day.GetActualWorkDay();
+            deficit += day.Deficit;
+            worked += day.Worked;
           }
         }
         Deficit = deficit;
-        WorkedHours = worked;
+        Worked = worked;
       }
     }
     public bool ContainDayId(int id)
     {
       return Days.ContainsKey(id);
     }
+
   }
 }

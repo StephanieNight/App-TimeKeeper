@@ -1,4 +1,4 @@
-namespace TimeKeeper
+namespace TimeKeeper.App.Common.Extensions
 {
   static class DateTimeExtensions
   {
@@ -23,5 +23,8 @@ namespace TimeKeeper
 
       return new DateTime(dt.Ticks + offset - delta, dt.Kind);
     }
+
+
+
   }
 }
