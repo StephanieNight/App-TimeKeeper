@@ -31,7 +31,7 @@ namespace TimeKeeper.App
     int ActiveProjectId = 0;
     CalendarSettings Project = null;
 
-    string version = "1.0.0";
+    string version = "1.0.3";
 
     public string DataLocation
     {
@@ -659,11 +659,11 @@ namespace TimeKeeper.App
               
               Terminal.Seperator();
             }
-            Terminal.WriteLine($"Total Session  :  {day.Duration}" );
+            Terminal.WriteLine($"Total Session  : {FormatedTimeSpan(day.Duration)}" );
             Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(-day.TotalBreaks)}");
             Terminal.Seperator();
             Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");        
-            Terminal.WriteLine($"Expected work  :  {day.ExpectedWorkDay}");            
+            Terminal.WriteLine($"Expected work  : {FormatedTimeSpan(-day.ExpectedWorkDay)}");            
             Terminal.Seperator();
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
