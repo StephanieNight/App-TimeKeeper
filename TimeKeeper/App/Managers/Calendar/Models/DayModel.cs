@@ -23,7 +23,7 @@ namespace TimeKeeper.App.Managers.Calendar.Models
         {
           return EndTime.Value - StartTime.Value;
         }
-        return new TimeSpan();
+        return DateTime.Now - StartTime.Value;
       }
     }
     public TimeSpan TotalBreaks
@@ -69,7 +69,7 @@ namespace TimeKeeper.App.Managers.Calendar.Models
     }
     private TimeSpan GetActualWorkDay()
     {
-      TimeSpan work = DateTime.Now - StartTime.Value;
+      TimeSpan work = Duration;
       if (IsComplete)
       {
         work = EndTime.Value - StartTime.Value;
