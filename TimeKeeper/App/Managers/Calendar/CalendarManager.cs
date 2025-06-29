@@ -73,7 +73,7 @@ namespace TimeKeeper.App.Managers.Calendar
     public List<YearModel> GetYears()
     {
 
-      return Years.Values.ToList();
+      return Years.Values.OrderBy(x => x.Id).ToList();
     }
     public List<DayModel> GetIncomplteDays()
     {

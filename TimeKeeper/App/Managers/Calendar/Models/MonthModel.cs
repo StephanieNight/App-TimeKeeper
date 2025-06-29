@@ -7,8 +7,8 @@
     public TimeSpan Deficit { get; set; }
     public TimeSpan Worked { get; set; }
     public List<DayModel> GetDays()
-    {
-      return Days.Values.ToList();
+    {      
+      return Days.Values.OrderBy(x => x.Id).ToList();
     }
     public DayModel GetDay(int id)
     {
@@ -23,8 +23,7 @@
       else
       {
         Days.Add(day.Id, day);
-      }
-       
+      }      
       UpdateStatus();
       return true;
     }
