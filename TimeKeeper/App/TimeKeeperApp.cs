@@ -31,7 +31,7 @@ namespace TimeKeeper.App
     int ActiveProjectId = 0;
     CalendarSettings Project = null;
 
-    string version = "1.0.3";
+    string version = "1.0.4";
 
     public string DataLocation
     {
