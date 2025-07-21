@@ -41,12 +41,12 @@ namespace TimeKeeper.App.Managers.Calendar
       }
     }
 
-    public CalendarManager(FileSystemManager filesystem, CalendarSettings calendarSettings)
+    public CalendarManager(CalendarSettings calendarSettings)
     {
       PathsData += $"/{calendarSettings.Name}";
       Settings = calendarSettings;
-      Filesystem = filesystem;
-      Filesystem.InitializeFolder($"{Filesystem.BasePath}/{PathsData}");
+      
+      TimeKeeperApp.FileSystem.InitializeFolder($"{TimeKeeperApp.FileSystem.BasePath}/{PathsData}");
       LoadYears();
       ActivateToday();
     }
@@ -416,10 +416,10 @@ namespace TimeKeeper.App.Managers.Calendar
     
     public void LoadYears()
     {
-      var files = Filesystem.GetFilesInFolder($"{PathsData}");
+      var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}");
       foreach (var yearFile in files)
       {
-        YearModel year = Filesystem.Deserialize<YearModel>(yearFile);
+        YearModel year = TimeKeeperApp.FileSystem.Deserialize<YearModel>(yearFile);
         Years.Add(year.Id, year);
       }
     }
@@ -427,10 +427,10 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       if (IsYearActive())
       {
-        var files = Filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
+        var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
         foreach (var monthFile in files)
         {
-          MonthModel month = Filesystem.Deserialize<MonthModel>(monthFile);
+          MonthModel month = TimeKeeperApp.FileSystem.Deserialize<MonthModel>(monthFile);
           Years[ActiveYearId].AddMonth(month);
         }
       }
@@ -439,10 +439,10 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       if (IsMonthActive())
       {
-        var files = Filesystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
+        var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
         foreach (var dayfile in files)
         {
-          DayModel day = Filesystem.Deserialize<DayModel>(dayfile);
+          DayModel day = TimeKeeperApp.FileSystem.Deserialize<DayModel>(dayfile);
           // Backward compatability for adding Index
           if (day.Id == -1)
           {
@@ -461,13 +461,13 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       foreach (YearModel year in Years.Values)
       {
-        Filesystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
+        TimeKeeperApp.FileSystem.Serialize<YearModel>($"{PathsData}/{year.Id}.json", year);
         foreach (MonthModel month in year.GetMonths())
         {
-          Filesystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
+          TimeKeeperApp.FileSystem.Serialize<MonthModel>($"{PathsData}/{year.Id}/{month.Id:00}.json", month);
           foreach (DayModel day in month.GetDays())
           {
-            Filesystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
+            TimeKeeperApp.FileSystem.Serialize<DayModel>($"{PathsData}/{year.Id}/{month.Id:00}/{day.Id:00}.json", day);
           }
         }
       }
