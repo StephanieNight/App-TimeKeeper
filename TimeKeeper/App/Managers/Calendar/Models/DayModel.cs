@@ -70,6 +70,10 @@ namespace TimeKeeper.App.Managers.Calendar.Models
     private TimeSpan GetActualWorkDay()
     {
       TimeSpan work = Duration;
+      if (IsComplete)
+      {
+        work = EndTime.Value - StartTime.Value;
+      }
       work -= GetTotalBreaksSpan();
       return work;
     }

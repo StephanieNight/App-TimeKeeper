@@ -12,7 +12,7 @@
     }
     public List<MonthModel> GetMonths()
     {
-      return Months.Values.ToList();
+      return Months.Values.OrderBy(x => x.Id).ToList();
     }
     public MonthModel GetMonth(int id)
     {
