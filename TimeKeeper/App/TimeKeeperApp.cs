@@ -28,7 +28,7 @@ namespace TimeKeeper.App
     public static AppSettings Settings { get; private set; } = new AppSettings();
 
     bool isRunning = true;
-    int ActiveProjectId = 0;   
+    int ActiveProjectId = 0;
 
     string version = "1.1.0";
 
@@ -81,13 +81,13 @@ namespace TimeKeeper.App
       // Write welcome screen
       Terminal.WriteLine($"Welcome {Settings.KeeperName}");
       Terminal.SeparatorLine();
-      Terminal.WriteLine($"Current date       : {DateTime.Now.ToString("MMMM dd, yyyy")}");      
+      Terminal.WriteLine($"Current date       : {DateTime.Now.ToString("MMMM dd, yyyy")}");
       Terminal.WriteLine($"TimeKeeper version : {version}");
       Terminal.SeparatorLine();
       Terminal.WriteLine($"Loaded {Calendar.GetDays().Count} days");
       Terminal.WriteLine($"{Calendar.GetIncomplteDays().Count} is incomplete");
       Terminal.SeparatorLine();
-      
+
       Thread.Sleep(2000);
 
       // Main Loop
@@ -161,8 +161,6 @@ namespace TimeKeeper.App
 
       // Project
       command = new CommandModel("project");
-      //command.SetCommandDescription("Starts and ends breaks");
-      //command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("get", HandleProjectGet);
       command.AddFlag("create", HandleProjectCreate);
       command.AddFlag("name", HandleProjectSetName);
@@ -191,6 +189,7 @@ namespace TimeKeeper.App
       command.SetCommandDescription("Starts and ends breaks");
       command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("name", HandleBreakStartWithName);
+      command.AddFlag("delete", HandleBreakDelete);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -523,6 +522,21 @@ namespace TimeKeeper.App
     }
     void HandleBreakSetStart(string[] args) { }
     void HandleBreakSetEnd(string[] args) { }
+    void HandleBreakDelete(string[] args)
+    {
+      Terminal.WriteLine("Select breaks to remove");
+      var breaklist = new List<string>();
+      var index = 0;
+      foreach (var b in Calendar.GetActiveDay().Breaks)
+      {
+        var complete = b.IsCompleted ? "D" : "G";
+        var duration = b.Duration;
+        breaklist.Add($"[{index}] [{complete}] [{duration}]");
+        index++;
+      }
+      index = Terminal.SingleSelectMenu.StartMenu(breaklist.ToArray());
+      Calendar.GetActiveDay().Breaks.RemoveAt(index);
+    }
     void HandleProjectGet(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
@@ -563,6 +577,10 @@ namespace TimeKeeper.App
 
     }
     void HandleProjectList(string[] args)
+    {
+
+    }
+    void HandleProjectSetDefault(string[] args)
     {
 
     }
@@ -654,16 +672,16 @@ namespace TimeKeeper.App
                 else
                 {
                   Terminal.WriteLine($"               :  {FormatedBreak(dayBreak)}");
-                }              
+                }
               }
-              
+
               Terminal.SeparatorLine();
             }
-            Terminal.WriteLine($"Total Session  : {FormatedTimeSpan(day.Duration)}" );
+            Terminal.WriteLine($"Total Session  : {FormatedTimeSpan(day.Duration)}");
             Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(-day.TotalBreaks)}");
             Terminal.SeparatorLine();
-            Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");        
-            Terminal.WriteLine($"Expected work  : {FormatedTimeSpan(-day.ExpectedWorkDay)}");            
+            Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");
+            Terminal.WriteLine($"Expected work  : {FormatedTimeSpan(-day.ExpectedWorkDay)}");
             Terminal.SeparatorLine();
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
