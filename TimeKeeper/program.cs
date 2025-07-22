@@ -3,7 +3,7 @@ using TimeKeeper.App;
 
 namespace TimeKeeper
 {
-  internal class program
+  public class Program
   {
     static void Main(string[] args)
     {

@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using TimeKeeper.App.Managers.Terminal;
-using TimeKeeper.App.Managers.Calendar.Models;
-using TimeKeeper.App.Managers.Terminal.Models;
-using TimeKeeper.App.Managers.Calendar.Enums;
+using TerminalUX;
+using TerminalUX.Models;
 using TimeKeeper.App.Common.Filesystem;
 using TimeKeeper.App.Managers.Calendar;
+using TimeKeeper.App.Managers.Calendar.Enums;
+using TimeKeeper.App.Managers.Calendar.Models;
 
 namespace TimeKeeper.App
 {
@@ -23,15 +23,17 @@ namespace TimeKeeper.App
 
   class TimeKeeperApp
   {
-    FileSystemManager Filesystem;
-    TerminalManeger Terminal;
-    CalendarManager Calendar;
-    AppSettings Settings = new AppSettings();
+    public static FileSystemManager FileSystem { get; private set; }
+    public static Terminal Terminal { get; private set; }
+    public static AppSettings Settings { get; private set; } = new AppSettings();
+
     bool isRunning = true;
     int ActiveProjectId = 0;
-    CalendarSettings Project = null;
 
-    string version = "1.0.3";
+    string version = "1.1.0";
+
+    public CalendarManager Calendar { get; private set; }
+    public CalendarSettings Project { get; private set; }
 
     public string DataLocation
     {
@@ -52,12 +54,12 @@ namespace TimeKeeper.App
     public TimeKeeperApp()
     {
       // Initialize Manager
-      Filesystem = new FileSystemManager(DataLocation);
+      FileSystem = new FileSystemManager(DataLocation);
 
       // Load settings
       LoadSettings();
 
-      Terminal = new TerminalManeger();
+      Terminal = new Terminal();
 
       // Initialize commands
       LoadCommands();
@@ -66,7 +68,7 @@ namespace TimeKeeper.App
       if (Settings.Projects.Count > 0)
       {
         Project = Settings.Projects[ActiveProjectId];
-        Calendar = new CalendarManager(Filesystem, Project);
+        Calendar = new CalendarManager(Project);
       }
     }
 
@@ -78,20 +80,20 @@ namespace TimeKeeper.App
 
       // Write welcome screen
       Terminal.WriteLine($"Welcome {Settings.KeeperName}");
-      Terminal.Seperator();
-      Terminal.WriteLine($"Current date       : {DateTime.Now.ToString("MMMM dd, yyyy")}");      
+      Terminal.SeparatorLine();
+      Terminal.WriteLine($"Current date       : {DateTime.Now.ToString("MMMM dd, yyyy")}");
       Terminal.WriteLine($"TimeKeeper version : {version}");
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
       Terminal.WriteLine($"Loaded {Calendar.GetDays().Count} days");
       Terminal.WriteLine($"{Calendar.GetIncomplteDays().Count} is incomplete");
-      Terminal.Seperator();
-      
+      Terminal.SeparatorLine();
+
       Thread.Sleep(2000);
 
       // Main Loop
       while (isRunning)
       {
-        Terminal.Clear();
+        Terminal.ClearScreen();
         MainScreen();
         InputHandler();
       }
@@ -103,7 +105,7 @@ namespace TimeKeeper.App
     {
       Terminal.WriteLine("Ready for input");
       Terminal.Write("> ");
-      string input = Terminal.GetInput();
+      string input = Terminal.Input();
       string[] commands = Terminal.ParseCommand(input);
       if (commands.Length > 0)
       {
@@ -113,9 +115,9 @@ namespace TimeKeeper.App
     void LoadSettings()
     {
       string settingsFileName = $"settings.json";
-      if (Filesystem.FileExists(settingsFileName))
+      if (FileSystem.FileExists(settingsFileName))
       {
-        Settings = Filesystem.Deserialize<AppSettings>(settingsFileName, true);
+        Settings = FileSystem.Deserialize<AppSettings>(settingsFileName, true);
         return;
       }
       Settings = new AppSettings(true);
@@ -124,7 +126,7 @@ namespace TimeKeeper.App
     {
       ActiveProjectId = id;
       Project = Settings.Projects[ActiveProjectId];
-      Calendar = new CalendarManager(Filesystem, Project);
+      Calendar = new CalendarManager(Project);
     }
     bool IsIndexValidProject(int id)
     {
@@ -134,7 +136,7 @@ namespace TimeKeeper.App
     {
       Calendar.Save();
       Settings.Projects[ActiveProjectId] = Project;
-      Filesystem.Serialize<AppSettings>("settings.json", Settings);
+      FileSystem.Serialize<AppSettings>("settings.json", Settings);
     }
     void LoadCommands()
     {
@@ -159,8 +161,6 @@ namespace TimeKeeper.App
 
       // Project
       command = new CommandModel("project");
-      //command.SetCommandDescription("Starts and ends breaks");
-      //command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("get", HandleProjectGet);
       command.AddFlag("create", HandleProjectCreate);
       command.AddFlag("name", HandleProjectSetName);
@@ -189,6 +189,7 @@ namespace TimeKeeper.App
       command.SetCommandDescription("Starts and ends breaks");
       command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("name", HandleBreakStartWithName);
+      command.AddFlag("delete", HandleBreakDelete);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -225,7 +226,6 @@ namespace TimeKeeper.App
       command.SetCommandDefaultAction(HandleDaysStatus);
       Terminal.AddCommand(command);
     }
-
     // Events
     // ------------------------------------------------------------
     void CurrentDomain_ProcessExit(object sender, EventArgs e)
@@ -235,7 +235,6 @@ namespace TimeKeeper.App
       Terminal.WriteLine("Done");
       Thread.Sleep(500);
     }
-
     // Command Handler
     // ------------------------------------------------------------
     void HandleDebug()
@@ -523,6 +522,21 @@ namespace TimeKeeper.App
     }
     void HandleBreakSetStart(string[] args) { }
     void HandleBreakSetEnd(string[] args) { }
+    void HandleBreakDelete(string[] args)
+    {
+      Terminal.WriteLine("Select breaks to remove");
+      var breaklist = new List<string>();
+      var index = 0;
+      foreach (var b in Calendar.GetActiveDay().Breaks)
+      {
+        var complete = b.IsCompleted ? "D" : "G";
+        var duration = b.Duration;
+        breaklist.Add($"[{index}] [{complete}] [{duration}]");
+        index++;
+      }
+      index = Terminal.SingleSelectMenu.StartMenu(breaklist.ToArray());
+      Calendar.GetActiveDay().Breaks.RemoveAt(index);
+    }
     void HandleProjectGet(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
@@ -546,7 +560,7 @@ namespace TimeKeeper.App
         Terminal.WriteLine("Usage: day");
         return;
       }
-      if (Filesystem.DirectoryExists(args[0]))
+      if (FileSystem.DirectoryExists(args[0]))
       {
         Terminal.WriteLine("Project Name must be unique");
         Terminal.WaitForKeypress();
@@ -566,13 +580,17 @@ namespace TimeKeeper.App
     {
 
     }
+    void HandleProjectSetDefault(string[] args)
+    {
+
+    }
     // Screens. 
     // ------------------------------------------------------------
     void MainScreen()
     {
 
       Terminal.WriteLine($"Project : {Project.Name}");
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
 
       var incompleteDays = Calendar.GetIncomplteDays();
       if (incompleteDays.Count > 0)
@@ -585,13 +603,13 @@ namespace TimeKeeper.App
         }
         else
         {
-          Terminal.Seperator();
+          Terminal.SeparatorLine();
           Terminal.WriteLine($"Incomplete days");
           foreach (DayModel day in incompleteDays)
           {
             Terminal.WriteLine($"[{day.Id:00}] {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
           }
-          Terminal.Seperator();
+          Terminal.SeparatorLine();
         }
       }
       TimeSpan deficit = TimeSpan.Zero;
@@ -611,7 +629,7 @@ namespace TimeKeeper.App
         {
           Terminal.WriteLine($"Total Work     :  {totalwork.TotalHours:00.0} h");
         }
-        Terminal.Seperator();
+        Terminal.SeparatorLine();
       }
       if (Calendar.IsYearActive())
       {
@@ -631,12 +649,12 @@ namespace TimeKeeper.App
             DayModel day = Calendar.GetActiveDay();
             currentDate = currentDate.AddDays(day.Id - 1);
             Terminal.WriteLine($"Active day     :  [{currentDate.Day:00}] {currentDate.ToString("dddd")}");
-            Terminal.Seperator();
+            Terminal.SeparatorLine();
             Terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             Terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             Terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
             Terminal.WriteLine($"Staus          :  {Calendar.Status}");
-            Terminal.Seperator();
+            Terminal.SeparatorLine();
             // Breaks
             // get all completed Breaks and breaks that are in the past.
             var breaks = day.Breaks.ToArray();
@@ -654,35 +672,35 @@ namespace TimeKeeper.App
                 else
                 {
                   Terminal.WriteLine($"               :  {FormatedBreak(dayBreak)}");
-                }              
+                }
               }
-              
-              Terminal.Seperator();
+
+              Terminal.SeparatorLine();
             }
-            Terminal.WriteLine($"Total Session  : {FormatedTimeSpan(day.Duration)}" );
+            Terminal.WriteLine($"Total Session  : {FormatedTimeSpan(day.Duration)}");
             Terminal.WriteLine($"Total Breaks   : {FormatedTimeSpan(-day.TotalBreaks)}");
-            Terminal.Seperator();
-            Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");        
-            Terminal.WriteLine($"Expected work  : {FormatedTimeSpan(-day.ExpectedWorkDay)}");            
-            Terminal.Seperator();
+            Terminal.SeparatorLine();
+            Terminal.WriteLine($"Total Work     : {FormatedActualWorkDay(day)}");
+            Terminal.WriteLine($"Expected work  : {FormatedTimeSpan(-day.ExpectedWorkDay)}");
+            Terminal.SeparatorLine();
             Terminal.WriteLine($"Deficit        : {FormatedTimeSpan(day.Deficit)}");
           }
         }
-        Terminal.Seperator();
+        Terminal.SeparatorLine();
       }
     }
     void DebugScreen()
     {
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
       Process p = Process.GetCurrentProcess();
       long ram = p.PrivateMemorySize64;
       Terminal.WriteLine($"RAM: {ram / 1024 / 1024} MB");
       p.Dispose();
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
       Terminal.WriteLine($"Keeper name: {Settings.KeeperName}");
       Terminal.WriteLine($"Rounding   : {Project.Rounding}");
       Terminal.WaitForKeypress();
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
       var years = Calendar.GetYears();
       var yearsDeficit = TimeSpan.Zero;
       var daysCount = 0;
@@ -738,14 +756,14 @@ namespace TimeKeeper.App
 
         yearsDeficit += year.Deficit;
       }
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
       Terminal.WriteLine($"Total Deficit : {FormatedTimeSpan(yearsDeficit)}");
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
 
       Terminal.WriteLine($"Loaded Years  : {yearsCount}");
       Terminal.WriteLine($"Loaded Months : {monthsCount}");
       Terminal.WriteLine($"Loaded Days   : {daysCount}");
-      Terminal.Seperator();
+      Terminal.SeparatorLine();
     }
     void StatusForActiveMonth(int limit = -1)
     {
