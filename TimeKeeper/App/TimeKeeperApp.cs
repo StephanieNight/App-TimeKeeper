@@ -1,7 +1,5 @@
-using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.VisualBasic;
 using TerminalUX;
 using TerminalUX.Models;
 using TimeKeeper.App.Common.Filesystem;
@@ -22,6 +20,7 @@ namespace TimeKeeper.App
   // TODO: Breaks - Add settings command for adding planned breaks. 
   // TODO: Breaks - Add Edit break start, end and name.
   // TODO: Space saving - Make Days load as well, with all the break objects and project objects this could save space as well.
+  // TODO: FIX Terminal single select menu not working as intended.
 
   class TimeKeeperApp
   {
