@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.VisualBasic;
 using TerminalUX;
 using TerminalUX.Models;
 using TimeKeeper.App.Common.Filesystem;
@@ -30,7 +31,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.1.0";
+    string version = "1.1.1";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -190,6 +191,7 @@ namespace TimeKeeper.App
       command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("name", HandleBreakStartWithName);
       command.AddFlag("delete", HandleBreakDelete);
+      command.AddFlag("add", HandleBreakAdd);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -524,18 +526,39 @@ namespace TimeKeeper.App
     void HandleBreakSetEnd(string[] args) { }
     void HandleBreakDelete(string[] args)
     {
-      Terminal.WriteLine("Select breaks to remove");
-      var breaklist = new List<string>();
-      var index = 0;
-      foreach (var b in Calendar.GetActiveDay().Breaks)
+      if (args.Length == 0)
       {
-        var complete = b.IsCompleted ? "D" : "G";
-        var duration = b.Duration;
-        breaklist.Add($"[{index}] [{complete}] [{duration}]");
-        index++;
+        Terminal.WriteLine("Select breaks to remove");
+        var breaklist = new List<string>();
+        var index = 0;
+        foreach (var b in Calendar.GetActiveDay().Breaks)
+        {
+          var complete = b.IsCompleted ? "D" : "G";
+          var duration = b.Duration;
+          breaklist.Add($"[{index}] [{complete}] [{duration}]");
+          index++;
+        }
+        index = Terminal.SingleSelectMenu.StartMenu(breaklist.ToArray());
+        if (index >= 0)
+        {
+          Calendar.GetActiveDay().Breaks.RemoveAt(index);
+        }
       }
-      index = Terminal.SingleSelectMenu.StartMenu(breaklist.ToArray());
-      Calendar.GetActiveDay().Breaks.RemoveAt(index);
+      else if (args.Length == 1 && Int32.TryParse(args[0], out int index))
+      {
+        if (Calendar.GetActiveDay().Breaks.Count() - 1 >= index)
+        {
+          Calendar.GetActiveDay().Breaks.RemoveAt(index);
+        }
+      }
+    }
+
+    void HandleBreakAdd(string[] args)
+    {
+      if (args.Length == 1 && TimeSpan.TryParse(args[0], out TimeSpan timespan))
+      {
+        Calendar.AddBreak(timespan);
+      }
     }
     void HandleProjectGet(string[] args)
     {
