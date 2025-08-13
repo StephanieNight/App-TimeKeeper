@@ -397,6 +397,21 @@ namespace TimeKeeper.App.Managers.Calendar
       }
     }
 
+    public void AddBreak(TimeSpan timespan)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        DateTime end = DateTime.Now;
+        DateTime start = end -timespan;
+        TimedSegment b = new TimedSegment();
+        b.Name = "break";
+        b.StartTime = start;
+        b.EndTime = end;
+        day.AddBreak(b);
+      }
+    }
+
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Settings.Rounding == Rounding.None)
