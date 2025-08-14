@@ -493,7 +493,7 @@ namespace TimeKeeper.App
         var index = Terminal.SingleSelectMenu.StartMenu(dayslist.ToArray());
         if (index >= 0)
         {
-          dayID = index;
+          dayID = days[index].Id;
         }
       }
       Calendar.ActivateDay(dayID);
