@@ -45,7 +45,7 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       PathsData += $"/{calendarSettings.Name}";
       Settings = calendarSettings;
-      
+
       TimeKeeperApp.FileSystem.InitializeFolder($"{TimeKeeperApp.FileSystem.BasePath}/{PathsData}");
       LoadYears();
       ActivateToday();
@@ -108,7 +108,7 @@ namespace TimeKeeper.App.Managers.Calendar
     public TimedSegment[] GetPlannedBreaks(DateOnly date)
     {
       List<TimedSegment> breaks = new List<TimedSegment>();
-      
+
       foreach (var planned in Settings.PlannedBreaks)
       {
         if (planned.ActiveOnDays.Contains(date.DayOfWeek))
@@ -213,9 +213,10 @@ namespace TimeKeeper.App.Managers.Calendar
             ActiveDayId = dayId;
             // load day to set state.
             DayModel day = GetActiveDay();
-            if(day.Breaks.Count >0){
+            if (day.Breaks.Count > 0)
+            {
               // if the last break is not completed then we are still on break.
-              IsOnBreak = !day.Breaks.Last().IsCompleted;              
+              IsOnBreak = !day.Breaks.Last().IsCompleted;
             }
             return true;
           }
@@ -277,7 +278,7 @@ namespace TimeKeeper.App.Managers.Calendar
         ActivateDay(day.Id);
       }
     }
-    
+
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -305,6 +306,7 @@ namespace TimeKeeper.App.Managers.Calendar
       // Day
       if (IsDayActive() == false)
       {
+        // Create new day.
         if (Years[ActiveYearId].GetMonth(ActiveMonthId).ContainDayId(startDateTime.Day) == false)
         {
           DayModel day = new DayModel();
@@ -316,18 +318,37 @@ namespace TimeKeeper.App.Managers.Calendar
           AddDay(day, true);
         }
       }
+      else
+      {
+        // Comming back to work at this day.
+        var day = GetActiveDay();
+        if (day.EndTime.HasValue)
+        {
+          var breakstart = day.EndTime.Value;
+          var breakend = GetRoundedTime(DateTime.Now);
+          var b = new TimedSegment();
+          b.StartTime = breakstart;
+          b.EndTime = breakend;
+          day.Breaks.Add(b);
+          day.EndTime = null;        
+        }        
+      }
       UpdateDeficit();
     }
     public void ClockOut(DateTime endDateTime)
     {
       if (IsDayActive())
       {
+        if (IsOnBreak)
+        {
+          ToggleBreak();
+        }
         DayModel day = GetActiveDay();
         day.EndTime = GetRoundedTime(endDateTime);
         UpdateDeficit();
       }
     }
-    
+
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
@@ -346,7 +367,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-    
+
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -356,7 +377,7 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-    
+
     public void ToggleBreak(string name = "break")
     {
       if (IsDayActive())
@@ -380,6 +401,21 @@ namespace TimeKeeper.App.Managers.Calendar
       }
     }
 
+    public void AddBreak(TimeSpan timespan)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        DateTime end = DateTime.Now;
+        DateTime start = end -timespan;
+        TimedSegment b = new TimedSegment();
+        b.Name = "break";
+        b.StartTime = start;
+        b.EndTime = end;
+        day.AddBreak(b);
+      }
+    }
+
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Settings.Rounding == Rounding.None)
@@ -390,7 +426,7 @@ namespace TimeKeeper.App.Managers.Calendar
       dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
       return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Settings.Rounding));
     }
-    
+
     public void UpdateDeficit()
     {
       foreach (YearModel year in Years.Values)
@@ -408,12 +444,12 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       Settings.ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
     }
-    
+
     public void SetRounding(Rounding rounding)
     {
       Settings.Rounding = rounding;
     }
-    
+
     public void LoadYears()
     {
       var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}");
