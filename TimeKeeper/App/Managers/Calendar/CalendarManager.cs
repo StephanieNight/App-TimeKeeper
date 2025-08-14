@@ -339,6 +339,10 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       if (IsDayActive())
       {
+        if (IsOnBreak)
+        {
+          ToggleBreak();
+        }
         DayModel day = GetActiveDay();
         day.EndTime = GetRoundedTime(endDateTime);
         UpdateDeficit();
