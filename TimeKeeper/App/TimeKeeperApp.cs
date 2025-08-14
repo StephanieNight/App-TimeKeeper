@@ -20,6 +20,7 @@ namespace TimeKeeper.App
   // TODO: Breaks - Add settings command for adding planned breaks. 
   // TODO: Breaks - Add Edit break start, end and name.
   // TODO: Space saving - Make Days load as well, with all the break objects and project objects this could save space as well.
+  // TODO: FIX Terminal single select menu not working as intended.
 
   class TimeKeeperApp
   {
@@ -30,7 +31,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.1.0";
+    string version = "1.1.1";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -190,6 +191,7 @@ namespace TimeKeeper.App
       command.SetCommandDefaultAction(HandleBreakToggle);
       command.AddFlag("name", HandleBreakStartWithName);
       command.AddFlag("delete", HandleBreakDelete);
+      command.AddFlag("add", HandleBreakAdd);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -468,17 +470,37 @@ namespace TimeKeeper.App
     }
     void HandleDayGet(string[] args)
     {
-      if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
+      int dayID = -1;
+
+      // Validate input
+      if (args.Length != 0 && !int.TryParse(args[0], out dayID))
       {
-        Terminal.WriteLine("Usage: project");
+        Terminal.WriteLine("Usage:");
+        Terminal.WriteLine(" - Get known day provide day: days -g 5");
+        Terminal.WriteLine(" - select from list of days : days -g ");
+        Terminal.WaitForKeypress();
         return;
+      }
+
+      if (args.Length == 0)
+      {
+        var dayslist = new List<string>();
+        var days = Calendar.GetActiveMonth().GetDays();
+        foreach (var day in days)
+        {
+          dayslist.Add($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
+        }
+        var index = Terminal.SingleSelectMenu.StartMenu(dayslist.ToArray());
+        if (index >= 0)
+        {
+          dayID = days[index].Id;
+        }
       }
       Calendar.ActivateDay(dayID);
       if (Calendar.IsDayActive() == false)
       {
-        Terminal.WriteLine("No day loaded.");
+        Terminal.WriteLine($"No day loaded. invalid id [{dayID}]");
       }
-
     }
     void HandleDaySetStart(string[] args)
     {
@@ -524,18 +546,38 @@ namespace TimeKeeper.App
     void HandleBreakSetEnd(string[] args) { }
     void HandleBreakDelete(string[] args)
     {
-      Terminal.WriteLine("Select breaks to remove");
-      var breaklist = new List<string>();
-      var index = 0;
-      foreach (var b in Calendar.GetActiveDay().Breaks)
+      if (args.Length == 0)
       {
-        var complete = b.IsCompleted ? "D" : "G";
-        var duration = b.Duration;
-        breaklist.Add($"[{index}] [{complete}] [{duration}]");
-        index++;
+        Terminal.WriteLine("Select breaks to remove");
+        var breaklist = new List<string>();
+        var index = 0;
+        foreach (var b in Calendar.GetActiveDay().Breaks)
+        {
+          var complete = b.IsCompleted ? "D" : "G";
+          var duration = b.Duration;
+          breaklist.Add($"[{index}] [{complete}] [{duration}]");
+          index++;
+        }
+        index = Terminal.SingleSelectMenu.StartMenu(breaklist.ToArray());
+        if (index >= 0)
+        {
+          Calendar.GetActiveDay().Breaks.RemoveAt(index);
+        }
       }
-      index = Terminal.SingleSelectMenu.StartMenu(breaklist.ToArray());
-      Calendar.GetActiveDay().Breaks.RemoveAt(index);
+      else if (args.Length == 1 && Int32.TryParse(args[0], out int index))
+      {
+        if (Calendar.GetActiveDay().Breaks.Count() - 1 >= index)
+        {
+          Calendar.GetActiveDay().Breaks.RemoveAt(index);
+        }
+      }
+    }
+    void HandleBreakAdd(string[] args)
+    {
+      if (args.Length == 1 && TimeSpan.TryParse(args[0], out TimeSpan timespan))
+      {
+        Calendar.AddBreak(timespan);
+      }
     }
     void HandleProjectGet(string[] args)
     {
