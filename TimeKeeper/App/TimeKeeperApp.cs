@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using Microsoft.VisualBasic;
 using TerminalUX;
 using TerminalUX.Models;
 using TimeKeeper.App.Common.Filesystem;
@@ -192,6 +191,8 @@ namespace TimeKeeper.App
       command.AddFlag("name", HandleBreakStartWithName);
       command.AddFlag("delete", HandleBreakDelete);
       command.AddFlag("add", HandleBreakAdd);
+      command.AddFlag("start", HandleBreakSetStart);
+      command.AddFlag("end", HandleBreakSetEnd);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -470,17 +471,37 @@ namespace TimeKeeper.App
     }
     void HandleDayGet(string[] args)
     {
-      if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
+      int dayID = -1;
+
+      // Validate input
+      if (args.Length != 0 && !int.TryParse(args[0], out dayID))
       {
-        Terminal.WriteLine("Usage: project");
+        Terminal.WriteLine("Usage:");
+        Terminal.WriteLine(" - Get known day provide day: days -g 5");
+        Terminal.WriteLine(" - select from list of days : days -g ");
+        Terminal.WaitForKeypress();
         return;
+      }
+
+      if (args.Length == 0)
+      {
+        var dayslist = new List<string>();
+        var days = Calendar.GetActiveMonth().GetDays();
+        foreach (var day in days)
+        {
+          dayslist.Add($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
+        }
+        var index = Terminal.SingleSelectMenu.StartMenu(dayslist.ToArray());
+        if (index >= 0)
+        {
+          dayID = days[index].Id;
+        }
       }
       Calendar.ActivateDay(dayID);
       if (Calendar.IsDayActive() == false)
       {
-        Terminal.WriteLine("No day loaded.");
+        Terminal.WriteLine($"No day loaded. invalid id [{dayID}]");
       }
-
     }
     void HandleDaySetStart(string[] args)
     {
@@ -519,11 +540,34 @@ namespace TimeKeeper.App
     }
     void HandleBreakStartWithName(string[] args)
     {
-      Calendar.ToggleBreak(args[0]);
+      if (args.Length == 1)
+      {
+        Calendar.ToggleBreak(args[0]);
+        Calendar.Save();
+      }
+    }
+
+    void HandleBreakSetStart(string[] args)
+    {
+      if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime startDateTime))
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      Calendar.SetBreakStart(startDateTime);
       Calendar.Save();
     }
-    void HandleBreakSetStart(string[] args) { }
-    void HandleBreakSetEnd(string[] args) { }
+
+    void HandleBreakSetEnd(string[] args)
+    {
+      if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime endDateTime))
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      Calendar.SetBreakEnd(endDateTime);
+      Calendar.Save();
+    }
     void HandleBreakDelete(string[] args)
     {
       if (args.Length == 0)
@@ -552,7 +596,6 @@ namespace TimeKeeper.App
         }
       }
     }
-
     void HandleBreakAdd(string[] args)
     {
       if (args.Length == 1 && TimeSpan.TryParse(args[0], out TimeSpan timespan))
