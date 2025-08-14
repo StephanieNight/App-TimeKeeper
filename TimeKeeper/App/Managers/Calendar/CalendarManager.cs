@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using TimeKeeper.App.Common.Extensions;
 using TimeKeeper.App.Common.Filesystem;
 using TimeKeeper.App.Managers.Calendar.Enums;
@@ -416,6 +417,42 @@ namespace TimeKeeper.App.Managers.Calendar
       }
     }
 
+    public void SetBreakStart(DateTime dateTime)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        if (IsOnBreak)
+        {
+          TimedSegment b = day.Breaks.Last();
+          b.StartTime = dateTime;
+          UpdateDeficit();
+        }
+        else
+        {
+          TimedSegment b = new TimedSegment();
+          b.Name = "break";
+          b.StartTime = GetRoundedTime(DateTime.Now);
+          day.AddBreak(b);
+          IsOnBreak = true;
+        }
+      }
+    }
+
+    public void SetBreakEnd(DateTime dateTime)
+    {
+      if (IsDayActive())
+      {
+        DayModel day = GetActiveDay();
+        if (IsOnBreak)
+        {
+          TimedSegment b = day.Breaks.Last();
+          b.EndTime = dateTime;
+          UpdateDeficit();
+          IsOnBreak = false;
+        }
+      }
+    }
     private DateTime GetRoundedTime(DateTime dateTime)
     {
       if (Settings.Rounding == Rounding.None)

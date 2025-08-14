@@ -20,7 +20,6 @@ namespace TimeKeeper.App
   // TODO: Breaks - Add settings command for adding planned breaks. 
   // TODO: Breaks - Add Edit break start, end and name.
   // TODO: Space saving - Make Days load as well, with all the break objects and project objects this could save space as well.
-  // TODO: FIX Terminal single select menu not working as intended.
 
   class TimeKeeperApp
   {
@@ -192,6 +191,8 @@ namespace TimeKeeper.App
       command.AddFlag("name", HandleBreakStartWithName);
       command.AddFlag("delete", HandleBreakDelete);
       command.AddFlag("add", HandleBreakAdd);
+      command.AddFlag("start", HandleBreakSetStart);
+      command.AddFlag("end", HandleBreakSetEnd);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -539,11 +540,34 @@ namespace TimeKeeper.App
     }
     void HandleBreakStartWithName(string[] args)
     {
-      Calendar.ToggleBreak(args[0]);
+      if (args.Length == 1)
+      {
+        Calendar.ToggleBreak(args[0]);
+        Calendar.Save();
+      }
+    }
+
+    void HandleBreakSetStart(string[] args)
+    {
+      if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime startDateTime))
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      Calendar.SetBreakStart(startDateTime);
       Calendar.Save();
     }
-    void HandleBreakSetStart(string[] args) { }
-    void HandleBreakSetEnd(string[] args) { }
+
+    void HandleBreakSetEnd(string[] args)
+    {
+      if (args.Length == 0 || !DateTime.TryParse(args[0], out DateTime endDateTime))
+      {
+        Terminal.WriteLine("Usage: day");
+        return;
+      }
+      Calendar.SetBreakEnd(endDateTime);
+      Calendar.Save();
+    }
     void HandleBreakDelete(string[] args)
     {
       if (args.Length == 0)
