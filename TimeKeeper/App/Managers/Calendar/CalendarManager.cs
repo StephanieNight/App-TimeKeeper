@@ -52,7 +52,7 @@ namespace TimeKeeper.App.Managers.Calendar
       ActivateToday();
     }
 
-    public List<DayModel> GetDays()
+    public List<DayModel> GetLoadedDays()
     {
       if (IsYearActive())
       {
@@ -63,7 +63,7 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return new List<DayModel>();
     }
-    public List<MonthModel> GetMonths()
+    public List<MonthModel> GetLoadedMonths()
     {
       if (IsYearActive())
       {
@@ -71,15 +71,14 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       return new List<MonthModel>();
     }
-    public List<YearModel> GetYears()
+    public List<YearModel> GetLoadedYears()
     {
-
       return Years.Values.OrderBy(x => x.Id).ToList();
     }
-    public List<DayModel> GetIncomplteDays()
+    public List<DayModel> GetLoadedIncompleteDays()
     {
       var DaysNotCompleted = new List<DayModel>();
-      foreach (var day in GetDays())
+      foreach (var day in GetLoadedDays())
       {
         if (day.IsComplete == false)
         {
@@ -226,6 +225,14 @@ namespace TimeKeeper.App.Managers.Calendar
       return false;
     }
 
+    public void DeActivateYear()
+    {
+
+    }
+    public void DeActiveMonth()
+    {
+
+    }
     public void DeActivateDay()
     {
       ActiveDayId = -1;
@@ -252,6 +259,56 @@ namespace TimeKeeper.App.Managers.Calendar
       return null;
     }
 
+    public int[] GetAllYears()
+    {
+      var folders = TimeKeeperApp.FileSystem.GetFoldersInPath($"{PathsData}/");
+      var years = new List<int>();
+      foreach (var folder in folders)
+      {
+        var path = Path.GetFileNameWithoutExtension(folder);
+        if (Int32.TryParse(path, out int year))
+        {
+          years.Add(year);
+        }
+      }
+      return years.ToArray();
+    }
+    public int[] GetAllMonths()
+    {
+      if (IsYearActive())
+      {
+        var folders = TimeKeeperApp.FileSystem.GetFoldersInPath($"{PathsData}/{ActiveYearId}/");
+        var months = new List<int>();
+        foreach (var folder in folders)
+        {
+          var path = Path.GetFileNameWithoutExtension(folder);
+          if (Int32.TryParse(path, out int month))
+          {
+            months.Add(month);
+          }
+        }
+        return months.ToArray();
+      }
+      return new int[0];
+    }
+    public int[] GetAllDays()
+    {
+      if (IsMonthActive())
+      {
+        var folders = TimeKeeperApp.FileSystem.GetFoldersInPath($"{PathsData}/{ActiveYearId}/{ActiveMonthId}/");
+        var days = new List<int>();
+        foreach (var folder in folders)
+        {
+          var path = Path.GetFileNameWithoutExtension(folder);
+          if (Int32.TryParse(path, out int day))
+          {
+            days.Add(day);
+          }
+        }
+        return days.ToArray();
+      }
+      return new int[0];
+    }
     public void AddYear(YearModel year, bool activate)
     {
       Years.Add(year.Id, year);
@@ -264,8 +321,10 @@ namespace TimeKeeper.App.Managers.Calendar
     }
     public void AddMonth(MonthModel month, bool activate)
     {
-      if (IsYearActive() == true)
+      if (IsYearActive())
+      { 
         Years[ActiveYearId].AddMonth(month);
+      }
       if (activate)
       {
         ActivateMonth(month.Id);
@@ -279,7 +338,6 @@ namespace TimeKeeper.App.Managers.Calendar
         ActivateDay(day.Id);
       }
     }
-
     public void ClockIn(DateTime startDateTime)
     {
       // Year
@@ -331,8 +389,8 @@ namespace TimeKeeper.App.Managers.Calendar
           b.StartTime = breakstart;
           b.EndTime = breakend;
           day.Breaks.Add(b);
-          day.EndTime = null;        
-        }        
+          day.EndTime = null;
+        }
       }
       UpdateDeficit();
     }
@@ -349,7 +407,6 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-
     public void SetDayStart(DateTime startDatetime)
     {
       if (IsDayActive())
@@ -368,7 +425,6 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-
     public void SetDayExpectedWorkDay(TimeSpan expectedWorkDay)
     {
       if (IsDayActive())
@@ -378,7 +434,6 @@ namespace TimeKeeper.App.Managers.Calendar
         UpdateDeficit();
       }
     }
-
     public void ToggleBreak(string name = "break")
     {
       if (IsDayActive())
@@ -401,14 +456,13 @@ namespace TimeKeeper.App.Managers.Calendar
         }
       }
     }
-
     public void AddBreak(TimeSpan timespan)
     {
       if (IsDayActive())
       {
         DayModel day = GetActiveDay();
         DateTime end = DateTime.Now;
-        DateTime start = end -timespan;
+        DateTime start = end - timespan;
         TimedSegment b = new TimedSegment();
         b.Name = "break";
         b.StartTime = start;
@@ -416,7 +470,6 @@ namespace TimeKeeper.App.Managers.Calendar
         day.AddBreak(b);
       }
     }
-
     public void SetBreakStart(DateTime dateTime)
     {
       if (IsDayActive())
@@ -438,7 +491,6 @@ namespace TimeKeeper.App.Managers.Calendar
         }
       }
     }
-
     public void SetBreakEnd(DateTime dateTime)
     {
       if (IsDayActive())
@@ -463,7 +515,6 @@ namespace TimeKeeper.App.Managers.Calendar
       dateTime = dateTime.RoundToNearest(TimeSpan.FromSeconds(30));
       return dateTime.RoundToNearest(TimeSpan.FromMinutes((double)Settings.Rounding));
     }
-
     public void UpdateDeficit()
     {
       foreach (YearModel year in Years.Values)
@@ -471,7 +522,6 @@ namespace TimeKeeper.App.Managers.Calendar
         year.UpdateStatus();
       }
     }
-
     public void SetExpectedWorkDay(DayOfWeek dayOfWeek, TimeSpan timeSpan)
     {
       if (Settings.ExpectedWorkWeek.ContainsKey(dayOfWeek))
@@ -481,15 +531,13 @@ namespace TimeKeeper.App.Managers.Calendar
       }
       Settings.ExpectedWorkWeek.Add(dayOfWeek, timeSpan);
     }
-
     public void SetRounding(Rounding rounding)
     {
       Settings.Rounding = rounding;
     }
-
     public void LoadYears()
     {
-      var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}");
+      var files = TimeKeeperApp.FileSystem.GetFilesInPath($"{PathsData}");
       foreach (var yearFile in files)
       {
         YearModel year = TimeKeeperApp.FileSystem.Deserialize<YearModel>(yearFile);
@@ -500,7 +548,7 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       if (IsYearActive())
       {
-        var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/");
+        var files = TimeKeeperApp.FileSystem.GetFilesInPath($"{PathsData}/{ActiveYearId}/");
         foreach (var monthFile in files)
         {
           MonthModel month = TimeKeeperApp.FileSystem.Deserialize<MonthModel>(monthFile);
@@ -512,7 +560,7 @@ namespace TimeKeeper.App.Managers.Calendar
     {
       if (IsMonthActive())
       {
-        var files = TimeKeeperApp.FileSystem.GetFilesInFolder($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
+        var files = TimeKeeperApp.FileSystem.GetFilesInPath($"{PathsData}/{ActiveYearId}/{ActiveMonthId:00}/");
         foreach (var dayfile in files)
         {
           DayModel day = TimeKeeperApp.FileSystem.Deserialize<DayModel>(dayfile);

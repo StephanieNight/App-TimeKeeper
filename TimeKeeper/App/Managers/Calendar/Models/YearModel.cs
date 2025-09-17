@@ -5,7 +5,7 @@
     private Dictionary<int, MonthModel> Months = new Dictionary<int, MonthModel>();
     public int Id { get; set; } = -1;
     public TimeSpan Deficit { get; set; }
-    public TimeSpan WorkedHours { get; set; }
+    public TimeSpan Worked { get; set; }
     public bool ContainMonthId(int id)
     {
       return Months.ContainsKey(id);
@@ -43,7 +43,7 @@
           worked += month.Worked;
         }
         Deficit = deficit;
-        WorkedHours = worked;
+        Worked = worked;
       }
     }
   }

@@ -6,6 +6,7 @@
     public int Id { get; set; } = -1;
     public TimeSpan Deficit { get; set; }
     public TimeSpan Worked { get; set; }
+    public TimeSpan AverageWorkDay { get; set; } 
     public List<DayModel> GetDays()
     {      
       return Days.Values.OrderBy(x => x.Id).ToList();
@@ -33,16 +34,19 @@
       {
         TimeSpan deficit = TimeSpan.Zero;
         TimeSpan worked = TimeSpan.Zero;
+        var completedDays = 0;
         foreach (DayModel day in Days.Values.ToArray())
         {
           if (day.IsComplete)
           {
             deficit += day.Deficit;
             worked += day.Worked;
+            completedDays++;
           }
         }
         Deficit = deficit;
         Worked = worked;
+        AverageWorkDay = worked / completedDays;
       }
     }
     public bool ContainDayId(int id)
