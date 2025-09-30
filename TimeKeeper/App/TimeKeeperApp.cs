@@ -12,14 +12,16 @@ using TimeKeeper.App.Managers.Calendar.Models;
 namespace TimeKeeper.App
 {
   /// <summary>
-  /// The time keeper is a little app for simplyfying office hours.
+  /// The time keeper is a little app for simplifying office hours.
   /// This app should not handle stuff like vacation or weeks. 
   /// This is only for clocking in and clocking out, and keeping up with flex over time. 
-  /// Specefic task time is handled by other applications. 
+  /// Specifics task time is handled by other applications. 
   /// </summary>
   /// 
 
   // TODO: Space saving - Just have one loaded object and a list of all id's of the next model.
+  // TODO: Terminal: fix menu placement.
+  // TODO: Set default project.
 
   class TimeKeeperApp
   {
