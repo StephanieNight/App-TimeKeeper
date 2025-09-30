@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace TimeKeeper.App.Common.Extensions
 {
   static class DateTimeExtensions
@@ -23,8 +25,22 @@ namespace TimeKeeper.App.Common.Extensions
 
       return new DateTime(dt.Ticks + offset - delta, dt.Kind);
     }
+    // Get ISO 8601 week number (international standard)
+    public static int GetIsoWeekNumber(this DateTime dt)
+    {
+      return CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(
+          dt,
+          CalendarWeekRule.FirstFourDayWeek,
+          DayOfWeek.Monday);
+    }
 
-
-
+    // Get US week number (Sunday as first day of week)
+    public static int GetUsWeekNumber(this DateTime dt)
+    {
+      return CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(
+          dt,
+          CalendarWeekRule.FirstDay,
+          DayOfWeek.Sunday);
+    }
   }
 }
