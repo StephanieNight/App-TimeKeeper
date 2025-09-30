@@ -19,9 +19,7 @@ namespace TimeKeeper.App
   /// </summary>
   /// 
 
-  // TODO: Breaks - Add settings command for adding planned breaks. 
-  // TODO: Breaks - Add Edit break start, end and name.
-  // TODO: Space saving - Make Days load as well, with all the break objects and project objects this could save space as well.
+  // TODO: Space saving - Just have one loaded object and a list of all id's of the next model.
 
   class TimeKeeperApp
   {
@@ -195,6 +193,7 @@ namespace TimeKeeper.App
       command.AddFlag("add", HandleBreakAdd);
       command.AddFlag("start", HandleBreakSetStart);
       command.AddFlag("end", HandleBreakSetEnd);
+      command.AddFlag("plan", HandleBreakPlan);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -781,10 +780,38 @@ namespace TimeKeeper.App
         Calendar.AddBreak(timespan);
       }
     }
+    void HandleBreakPlan(string[] args)
+    {
+      TimeOnly startTime;
+      TimeOnly endTime;
+
+      while (!TimeOnly.TryParse(Terminal.Prompt("Time of start of break:"), out startTime)) ;
+      while (!TimeOnly.TryParse(Terminal.Prompt("Time of end of break:"), out endTime)) ;
+
+      var name = Terminal.Prompt("Name of break");
+
+      var days = new string[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
+      var result = Terminal.MultiSelectMenu.StartMenu(days, Console.CursorTop,Console.CursorLeft);
+      var planed = new PlannedBreakModel()
+      {
+        Name = name == "" ? "break": name,
+        Start = startTime,
+        End = endTime
+      };
+      for(int i = 0; i < result.Length; i ++)
+      {
+        if (result[i])
+        {
+          planed.ActiveOnDays.Add((DayOfWeek)Enum.Parse(typeof(DayOfWeek), days[i]));
+        }
+      }
+      Project.PlannedBreaks.Add(planed);
+      SaveSettings();
+    }
     #endregion
 
     #region Screens
-    
+
     void MainScreen()
     {
 
