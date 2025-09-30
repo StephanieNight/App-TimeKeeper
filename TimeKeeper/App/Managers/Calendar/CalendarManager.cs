@@ -227,14 +227,26 @@ namespace TimeKeeper.App.Managers.Calendar
 
     public void DeActivateYear()
     {
-
+      UpdateDeficit();
+      Save();
+      ActiveDayId = -1;
+      GetActiveMonth().GetDays().Clear();
+      ActiveMonthId = -1;
+      GetActiveYear().GetMonths().Clear();
+      ActiveYearId = -1;
     }
     public void DeActiveMonth()
     {
-
+      UpdateDeficit();
+      Save();
+      ActiveDayId = -1;
+      GetActiveMonth().GetDays().Clear();
+      ActiveMonthId = -1;
     }
     public void DeActivateDay()
     {
+      UpdateDeficit();
+      Save();
       ActiveDayId = -1;
     }
 

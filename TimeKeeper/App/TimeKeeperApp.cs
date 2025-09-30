@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using TerminalUX;
@@ -503,6 +504,9 @@ namespace TimeKeeper.App
     // ------------------------------------------------------------
     void HandleYearShowAverageWorkWeek(string[] args)
     {
+      var activeMonth = Calendar.GetActiveMonth().Id;
+      var activeDay = Calendar.GetActiveDay().Id;
+
       if (Calendar.IsYearActive())
       {
         Dictionary<int, double> weekCounter = new Dictionary<int, double>();
@@ -526,6 +530,7 @@ namespace TimeKeeper.App
               }
             }
           }
+          Calendar.DeActiveMonth();
         }
         var counter = 0;
         foreach (var key in weekCounter.Keys)
@@ -541,6 +546,9 @@ namespace TimeKeeper.App
         }
         Terminal.InputContinue("End");
       }
+
+      Calendar.ActivateMonth(activeMonth);
+      Calendar.ActivateDay(activeDay);
     }
     void HandleYearShowAverageDailyWorkPerWeek(string[] args)
     {
@@ -607,10 +615,11 @@ namespace TimeKeeper.App
         if (Calendar.IsMonthActive())
         {
           var month = Calendar.GetActiveMonth();
-
-          Terminal.WriteLine($"Month Average daily work: {month.AverageWorkDay}");
-          Terminal.Input();
-        }
+          var awd = month.AverageWorkDay;
+          
+        Terminal.WriteLine($"Month Average daily work: {awd.Hours:00}:{awd.Minutes:00}:{awd.Seconds:00}");
+        Terminal.Input();
+      }
       }
     }
     // Day
