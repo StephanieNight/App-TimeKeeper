@@ -32,7 +32,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.1.2";
+    string version = "1.1.3";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -69,6 +69,7 @@ namespace TimeKeeper.App
       // Calendar.
       if (Settings.Projects.Count > 0)
       {
+        ActiveProjectId = Settings.ProjectDefault;
         Project = Settings.Projects[ActiveProjectId];
         Calendar = new CalendarManager(Project);
       }
@@ -132,7 +133,7 @@ namespace TimeKeeper.App
     }
     bool IsIndexValidProject(int id)
     {
-      return Settings.Projects.Count > id && id > 0;
+      return Settings.Projects.Count > id || id > 0;
     }
     void SaveSettings()
     {
@@ -165,8 +166,9 @@ namespace TimeKeeper.App
       command = new CommandModel("project");
       command.AddFlag("get", HandleProjectGet);
       command.AddFlag("create", HandleProjectCreate);
-      command.AddFlag("name", HandleProjectSetName);
+      //command.AddFlag("rename", HandleProjectSetName);
       command.AddFlag("list", HandleProjectList);
+      command.AddFlag("default",HandleProjectSetDefault);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -456,18 +458,18 @@ namespace TimeKeeper.App
     // ------------------------------------------------------------
     void HandleProjectGet(string[] args)
     {
-      if (args.Length == 0 || !int.TryParse(args[0], out int dayID))
+      if (args.Length == 0 || !int.TryParse(args[0], out int ProjectID))
       {
         Terminal.WriteLine("Usage: day");
         return;
       }
-      if (IsIndexValidProject(dayID))
+      if (IsIndexValidProject(ProjectID))
       {
         SaveSettings();
-        LoadProject(dayID);
+        LoadProject(ProjectID);
         return;
       }
-      Terminal.WriteLine($"Index :{dayID} invalid");
+      Terminal.WriteLine($"Index :{ProjectID} invalid");
       Terminal.WaitForKeypress();
     }
     void HandleProjectCreate(string[] args)
@@ -495,11 +497,26 @@ namespace TimeKeeper.App
     }
     void HandleProjectList(string[] args)
     {
-
+        for( int i = 0; i < Settings.Projects.Count; i++){
+          var p = Settings.Projects[i];
+          Terminal.WriteLine($"[{i:00}] {p.Name}");          
+        }
+        Terminal.WaitForKeypress();
     }
     void HandleProjectSetDefault(string[] args)
     {
-
+      if (args.Length == 0 || !int.TryParse(args[0], out int ProjectID))
+      {
+        Terminal.WriteLine("Usage: set project default");
+        return;        
+      }
+      if(!IsIndexValidProject(ProjectID)){
+        Terminal.WriteLine($"Project id of {ProjectID} is invalid");
+        Terminal.WaitForKeypress();
+        return;        
+      }
+      Settings.ProjectDefault = ProjectID;
+      SaveSettings();
     }
     // Year 
     // ------------------------------------------------------------
@@ -600,7 +617,7 @@ namespace TimeKeeper.App
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int MonthID))
       {
-        Terminal.WriteLine("Usage: day");
+        Terminal.WriteLine("Usage: Month");
         return;
       }
       Calendar.ActivateMonth(MonthID);

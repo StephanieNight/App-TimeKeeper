@@ -46,7 +46,10 @@
         }
         Deficit = deficit;
         Worked = worked;
-        AverageWorkDay = worked / completedDays;
+        if(completedDays > 0)
+        {
+          AverageWorkDay = worked / completedDays;
+        }        
       }
     }
     public bool ContainDayId(int id)
