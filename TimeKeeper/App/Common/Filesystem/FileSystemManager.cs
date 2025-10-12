@@ -63,12 +63,21 @@ namespace TimeKeeper.App.Common.Filesystem
       string jsonSerial = reader.ReadToEnd();
       return JsonSerializer.Deserialize<T>(jsonSerial);
     }
-    public string[] GetFilesInFolder(string folder)
+    public string[] GetFilesInPath(string path)
     {
-      var fullpath = $"{BasePath}/{folder}";
+      var fullpath = $"{BasePath}/{path}";
       if (DirectoryExists(fullpath, false))
       {
         return Directory.GetFiles(fullpath);
+      }
+      return new string[0];
+    }
+    public string[] GetFoldersInPath(string path)
+    {
+      var fullpath = $"{BasePath}/{path}";
+      if (DirectoryExists(fullpath, false))
+      {
+        return Directory.GetDirectories(fullpath);
       }
       return new string[0];
     }
