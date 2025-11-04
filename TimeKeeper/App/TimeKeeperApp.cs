@@ -551,7 +551,10 @@ namespace TimeKeeper.App
           Calendar.DeActiveMonth();
         }
         var counter = 0;
-        foreach (var key in weekCounter.Keys)
+        var orderedKeys = weekCounter.Keys.ToList();
+        orderedKeys.Sort();
+
+        foreach (var key in orderedKeys)
         {      
           var totalHours = weekCounter[key];       
           Terminal.WriteLine($"[{key:00}] : {totalHours:0.00}");
