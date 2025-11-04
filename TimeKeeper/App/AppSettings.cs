@@ -17,5 +17,6 @@ namespace TimeKeeper.App
     public bool ShowDeficit { get; set; }
     public bool ShowTotalWork { get; set; }
     public List<CalendarSettings> Projects { get; set; } = new List<CalendarSettings>();
+    public int ProjectDefault  { get; set; } = 0;
   }
 }
