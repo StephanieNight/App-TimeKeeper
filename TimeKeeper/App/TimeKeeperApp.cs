@@ -636,9 +636,10 @@ namespace TimeKeeper.App
         if (Calendar.IsMonthActive())
         {
           var month = Calendar.GetActiveMonth();
+          var days = month.GetDays().Count;
           var awd = month.AverageWorkDay;
           
-        Terminal.WriteLine($"Month Average daily work: {awd.Hours:00}:{awd.Minutes:00}:{awd.Seconds:00}");
+        Terminal.WriteLine($"Month Average daily work: {awd.Hours:00}:{awd.Minutes:00}:{awd.Seconds:00} over {days:00} Days");
         Terminal.Input();
       }
       }
