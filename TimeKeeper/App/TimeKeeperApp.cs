@@ -21,7 +21,6 @@ namespace TimeKeeper.App
 
   // TODO: Space saving - Just have one loaded object and a list of all id's of the next model.
   // TODO: Terminal: fix menu placement.
-  // TODO: Set default project.
 
   class TimeKeeperApp
   {
@@ -238,6 +237,7 @@ namespace TimeKeeper.App
       // Days
       command = new CommandModel("days");
       command.AddFlag("limit", HandleDaysStatusWithLimit);
+      command.AddFlag("count", HandleDaysCount);
       command.GenerateTagsForFlags();
       command.SetCommandDefaultAction(HandleDaysStatus);
       Terminal.AddCommand(command);
@@ -659,6 +659,45 @@ namespace TimeKeeper.App
       }
       StatusForActiveMonth(dayLimit);
     }
+    void HandleDaysCount(string[] args)
+    {
+      var activeYear = Calendar.GetActiveYear().Id;
+      var activeMonth = Calendar.GetActiveMonth().Id;
+      var activeDay = Calendar.GetActiveDay().Id;
+
+      var totalYears = 0;
+      var totalMonths = 0;
+      var totalDays = 0;
+      var TotalHours = new TimeSpan();
+      
+
+      foreach (var year in Calendar.GetAllYears())
+      {
+        Calendar.ActivateYear(year);
+        totalYears++;
+
+        foreach (var month in Calendar.GetAllMonths())
+        {
+          Calendar.ActivateMonth(month);
+          totalMonths++;
+          totalDays += Calendar.GetActiveMonth().GetDays().Count;
+          TotalHours += Calendar.GetActiveMonth().Worked;
+          Calendar.DeActiveMonth();
+        }
+        Calendar.DeActivateYear();        
+      }
+      Terminal.WriteLine($"Total Years : {totalYears}");
+      Terminal.WriteLine($"Total Months: {totalMonths}");
+      Terminal.WriteLine($"Total Days  : {totalDays}");
+      Terminal.WriteLine($"Total Hours : {TotalHours.TotalHours:00.00}");
+
+      Terminal.InputContinue();
+
+      Calendar.ActivateYear(activeYear);
+      Calendar.ActivateMonth(activeMonth);
+      Calendar.ActivateDay(activeDay);
+    }
+
     void HandleDayGet(string[] args)
     {
       int dayID = -1;
