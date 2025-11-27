@@ -31,7 +31,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.1.3";
+    string version = "1.1.4";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
