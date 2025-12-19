@@ -31,7 +31,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.1.4";
+    string version = "1.1.5";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -1094,7 +1094,10 @@ namespace TimeKeeper.App
     }
     string FormatedTimeSpan(TimeSpan timeSpan)
     {
-      return $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
+      var result = $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}";
+      result += (timeSpan.Days > 0 ? $"{Math.Abs(timeSpan.Days):00}D " : "");
+      result += $"{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
+      return result;
     }
     string FormatedBreak(TimedSegment daybreak)
     {
