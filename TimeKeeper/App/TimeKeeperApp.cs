@@ -1095,7 +1095,7 @@ namespace TimeKeeper.App
     string FormatedTimeSpan(TimeSpan timeSpan)
     {
       var result = $"{(timeSpan.TotalMilliseconds >= 0 ? "+" : "-")}";
-      result += (timeSpan.Days > 0 ? $"{Math.Abs(timeSpan.Days):00}D " : "");
+      result += (Math.Abs(timeSpan.Days) > 0 ? $"{Math.Abs(timeSpan.Days)} " : "");
       result += $"{Math.Abs(timeSpan.Hours):00}:{Math.Abs(timeSpan.Minutes):00}:{Math.Abs(timeSpan.Seconds):00}";
       return result;
     }
