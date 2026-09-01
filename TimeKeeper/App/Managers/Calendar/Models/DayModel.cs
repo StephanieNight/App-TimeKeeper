@@ -5,6 +5,7 @@ namespace TimeKeeper.App.Managers.Calendar.Models
   class DayModel
   {
     public int Id { get; set; } = -1;
+    public bool IsAtOffice { get; set; } = true;
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }
     public List<TimedSegment> Breaks { get; set; } = new List<TimedSegment>();
