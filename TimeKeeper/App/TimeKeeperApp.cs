@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using TerminalUX;
 using TerminalUX.Models;
@@ -31,7 +32,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.1.5";
+    string version = "1.2.0";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -167,7 +168,7 @@ namespace TimeKeeper.App
       command.AddFlag("create", HandleProjectCreate);
       //command.AddFlag("rename", HandleProjectSetName);
       command.AddFlag("list", HandleProjectList);
-      command.AddFlag("default",HandleProjectSetDefault);
+      command.AddFlag("default", HandleProjectSetDefault);
       command.GenerateTagsForFlags();
 
       Terminal.AddCommand(command);
@@ -215,6 +216,7 @@ namespace TimeKeeper.App
       command = new CommandModel("year");
       //command.AddFlag("get", HandleMonthGet);
       command.AddFlag("avarageworkweek", HandleYearShowAverageWorkWeek);
+      command.AddFlag("taxes", HandleEndOfYearCommute);
       command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
@@ -231,6 +233,7 @@ namespace TimeKeeper.App
       command.AddFlag("start", HandleDaySetStart);
       command.AddFlag("end", HandleDaySetEnd);
       command.AddFlag("expectedworkday", HandleDaySetExpectedWorkDay);
+      command.AddFlag("office", HandleDayToggleInOffice);
       command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
@@ -497,23 +500,25 @@ namespace TimeKeeper.App
     }
     void HandleProjectList(string[] args)
     {
-        for( int i = 0; i < Settings.Projects.Count; i++){
-          var p = Settings.Projects[i];
-          Terminal.WriteLine($"[{i:00}] {p.Name}");          
-        }
-        Terminal.WaitForKeypress();
+      for (int i = 0; i < Settings.Projects.Count; i++)
+      {
+        var p = Settings.Projects[i];
+        Terminal.WriteLine($"[{i:00}] {p.Name}");
+      }
+      Terminal.WaitForKeypress();
     }
     void HandleProjectSetDefault(string[] args)
     {
       if (args.Length == 0 || !int.TryParse(args[0], out int ProjectID))
       {
         Terminal.WriteLine("Usage: set project default");
-        return;        
+        return;
       }
-      if(!IsIndexValidProject(ProjectID)){
+      if (!IsIndexValidProject(ProjectID))
+      {
         Terminal.WriteLine($"Project id of {ProjectID} is invalid");
         Terminal.WaitForKeypress();
-        return;        
+        return;
       }
       Settings.ProjectDefault = ProjectID;
       SaveSettings();
@@ -539,7 +544,7 @@ namespace TimeKeeper.App
               if (weekCounter.ContainsKey(weekOfYear))
               {
                 var current = weekCounter[weekOfYear] += day.Worked.TotalHours;
-           
+
                 weekCounter[weekOfYear] = current;
               }
               else
@@ -555,8 +560,8 @@ namespace TimeKeeper.App
         orderedKeys.Sort();
 
         foreach (var key in orderedKeys)
-        {      
-          var totalHours = weekCounter[key];       
+        {
+          var totalHours = weekCounter[key];
           Terminal.WriteLine($"[{key:00}] : {totalHours:0.00}");
           counter++;
           if (counter == 10)
@@ -571,12 +576,83 @@ namespace TimeKeeper.App
       Calendar.ActivateMonth(activeMonth);
       Calendar.ActivateDay(activeDay);
     }
+    void HandleEndOfYearCommute(string[] args)
+    {
+      if (args.Length == 1 && args[0] == "init")
+      {
+        Terminal.Prompt("Adding all days with no breaks as a work from home day. Continue?");
+
+        var activeYear = Calendar.GetActiveYear().Id;
+        var activeMonth = Calendar.GetActiveMonth().Id;
+        var activeDay = Calendar.GetActiveDay().Id;
+
+        foreach (var year in Calendar.GetAllYears())
+        {
+          if (Calendar.ActivateYear(year))
+          {
+            foreach (var month in Calendar.GetAllMonths())
+            {
+              Calendar.ActivateMonth(month);
+              foreach (var day in Calendar.GetActiveMonth().GetDays())
+              {
+                day.IsAtOffice = day.Breaks.Count >= 1;
+              }
+              Calendar.Save();
+              Calendar.DeActiveMonth();
+            }
+          }
+        }
+        Terminal.InputContinue("End");
+
+        Calendar.ActivateYear(activeYear);
+        Calendar.ActivateMonth(activeMonth);
+        Calendar.ActivateDay(activeDay);
+      }
+      else
+      {
+        if (args.Length == 0 || !int.TryParse(args[0], out int yearID))
+        {
+          Terminal.WriteLine("Usage: End Of Year Commute");
+          return;
+        }
+        if (Calendar.GetAllYears().Any(x => x == yearID) == false)
+        {
+          Terminal.WriteLine($"Year {yearID} does not exist.");
+          return;
+        }
+        var activeYear = Calendar.GetActiveYear().Id;
+        var activeMonth = Calendar.GetActiveMonth().Id;
+        var activeDay = Calendar.GetActiveDay().Id;
+
+        Calendar.ActivateYear(yearID);
+        foreach (var month in Calendar.GetAllMonths())
+        {
+          var officeDays = 0;
+          var workingDays = 0;
+          Calendar.ActivateMonth(month);
+          foreach (var day in Calendar.GetActiveMonth().GetDays())
+          {
+            workingDays += 1;
+            if (day.IsAtOffice)
+            {
+              officeDays += 1;
+            }
+          }
+          Terminal.WriteLine($"[{month:00}] {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month)} {officeDays:00} [{workingDays:00}] ");
+        }
+        Terminal.InputContinue("End");
+
+        Calendar.ActivateYear(activeYear);
+        Calendar.ActivateMonth(activeMonth);
+        Calendar.ActivateDay(activeDay);
+      }
+    }
     void HandleYearShowAverageDailyWorkPerWeek(string[] args)
     {
       if (Calendar.IsYearActive())
       {
         Dictionary<int, (double TotalHours, int Count)> weekCounter = new Dictionary<int, (double TotalHours, int Count)>();
-        foreach(var month in Calendar.GetAllMonths())
+        foreach (var month in Calendar.GetAllMonths())
         {
           Calendar.ActivateMonth(month);
           foreach (var day in Calendar.GetActiveMonth().GetDays())
@@ -599,20 +675,20 @@ namespace TimeKeeper.App
           }
         }
         var counter = 0;
-        foreach(var key in weekCounter.Keys)
+        foreach (var key in weekCounter.Keys)
         {
           counter++;
           var current = weekCounter[key];
           var average = current.TotalHours / current.Count;
           Terminal.WriteLine($"[{key:00}] : {average:0.00}");
-          if(counter == 10)
+          if (counter == 10)
           {
             counter = 0;
             Terminal.InputContinue();
           }
         }
         Terminal.InputContinue("End");
-      }          
+      }
     }
     // Month
     // ------------------------------------------------------------
@@ -638,10 +714,10 @@ namespace TimeKeeper.App
           var month = Calendar.GetActiveMonth();
           var days = month.GetDays().Count;
           var awd = month.AverageWorkDay;
-          
-        Terminal.WriteLine($"Month Average daily work: {awd.Hours:00}:{awd.Minutes:00}:{awd.Seconds:00} over {days:00} Days");
-        Terminal.Input();
-      }
+
+          Terminal.WriteLine($"Month Average daily work: {awd.Hours:00}:{awd.Minutes:00}:{awd.Seconds:00} over {days:00} Days");
+          Terminal.Input();
+        }
       }
     }
     // Day
@@ -669,7 +745,7 @@ namespace TimeKeeper.App
       var totalMonths = 0;
       var totalDays = 0;
       var TotalHours = new TimeSpan();
-      
+
 
       foreach (var year in Calendar.GetAllYears())
       {
@@ -684,7 +760,7 @@ namespace TimeKeeper.App
           TotalHours += Calendar.GetActiveMonth().Worked;
           Calendar.DeActiveMonth();
         }
-        Calendar.DeActivateYear();        
+        Calendar.DeActivateYear();
       }
       Terminal.WriteLine($"Total Years : {totalYears}");
       Terminal.WriteLine($"Total Months: {totalMonths}");
@@ -772,6 +848,32 @@ namespace TimeKeeper.App
       Calendar.SetDayExpectedWorkDay(ew);
       Calendar.Save();
     }
+    void HandleDayToggleInOffice(string[] args)
+    {
+      if (args.Length == 0)
+      {
+        if (Calendar.IsDayActive())
+        {
+          Calendar.GetActiveDay().IsAtOffice = !Calendar.GetActiveDay().IsAtOffice;
+          Calendar.Save();
+          return;
+        }
+      }
+      else if (bool.TryParse(args[0], out bool isAtOffice))
+      {
+        if (Calendar.IsDayActive())
+        {
+          Calendar.GetActiveDay().IsAtOffice = isAtOffice;
+          Calendar.Save();
+          return;
+        }
+      }
+      else
+      {
+        Terminal.WriteLine("Usage: day toggle office");
+        return;
+      }
+    }
     // Break 
     // ------------------------------------------------------------
     void HandleBreakToggle()
@@ -853,14 +955,14 @@ namespace TimeKeeper.App
       var name = Terminal.Prompt("Name of break");
 
       var days = new string[] { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
-      var result = Terminal.MultiSelectMenu.StartMenu(days, Console.CursorTop,Console.CursorLeft);
+      var result = Terminal.MultiSelectMenu.StartMenu(days, Console.CursorTop, Console.CursorLeft);
       var planed = new PlannedBreakModel()
       {
-        Name = name == "" ? "break": name,
+        Name = name == "" ? "break" : name,
         Start = startTime,
         End = endTime
       };
-      for(int i = 0; i < result.Length; i ++)
+      for (int i = 0; i < result.Length; i++)
       {
         if (result[i])
         {
@@ -941,7 +1043,9 @@ namespace TimeKeeper.App
             Terminal.WriteLine($"Date           :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("dd MMM yyyy") : "")}");
             Terminal.WriteLine($"Started        :  {(day.StartTime.HasValue ? day.StartTime.Value.ToString("hh:mm:ss") : "")}");
             Terminal.WriteLine($"Ended          :  {(day.EndTime.HasValue ? day.EndTime.Value.ToString("hh:mm:ss") : "")}");
+            Terminal.WriteLine($"In Office      :  {(day.IsAtOffice ? "Yes" : "No")}");
             Terminal.WriteLine($"Staus          :  {Calendar.Status}");
+
             Terminal.SeparatorLine();
             // Breaks
             // get all completed Breaks and breaks that are in the past.
@@ -1072,7 +1176,7 @@ namespace TimeKeeper.App
     #endregion
 
     #region Formatting
-    
+
     string FormatedActualWorkDay(DayModel day)
     {
       var worked = day.Worked;
