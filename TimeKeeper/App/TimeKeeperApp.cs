@@ -224,6 +224,7 @@ namespace TimeKeeper.App
       command = new CommandModel("month");
       command.AddFlag("get", HandleMonthGet);
       command.AddFlag("averagework", HandleMonthShowAverageWork);
+      command.AddFlag("total", HandleMonthShowTotalDays);
       command.GenerateTagsForFlags();
       Terminal.AddCommand(command);
 
@@ -718,6 +719,14 @@ namespace TimeKeeper.App
           Terminal.WriteLine($"Month Average daily work: {awd.Hours:00}:{awd.Minutes:00}:{awd.Seconds:00} over {days:00} Days");
           Terminal.Input();
         }
+      }
+    }
+    void HandleMonthShowTotalDays(string[] args)
+    {
+      if (Calendar.IsMonthActive())
+      {
+        Terminal.WriteLine($"Month has a total of {Calendar.GetActiveMonth().GetDays().Count} Days");
+        Terminal.Input();
       }
     }
     // Day
