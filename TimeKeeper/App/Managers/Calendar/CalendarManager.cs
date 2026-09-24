@@ -281,6 +281,52 @@ namespace TimeKeeper.App.Managers.Calendar
       if (month != null) { return month.GetDay(ActiveDayId); }
       return null;
     }
+    /// <summary>
+    /// Gets the previus days id if there is is one. return -1 on error
+    /// </summary>
+    /// <param name="dayId"></param>
+    /// <returns></returns>
+    public int GetPreviusDay(int yearId,int monthId, int dayId)
+    {
+      var files = TimeKeeperApp.FileSystem.GetFilesInPath($"{PathsData}/{yearId}/{monthId:00}/");
+      var index = Array.IndexOf(files, $"{TimeKeeperApp.FileSystem.BasePath}/{PathsData}/{yearId}/{monthId:00}/{dayId:00}.json");
+      // get the previus file index
+      index--;
+      if (index >= 0)
+        return int.Parse(Path.GetFileNameWithoutExtension(files[index]));
+      return -1;
+    }
+    /// <summary>
+    /// Gets the previus days id if there is is one. return -1 on error
+    /// </summary>
+    /// <param name="dayId"></param>
+    /// <returns></returns>
+    public int GetPreviusMonth(int yearId,int monthId)
+    {
+      var files = TimeKeeperApp.FileSystem.GetFilesInPath($"{PathsData}/{yearId}/");
+      var index = Array.IndexOf(files, $"{TimeKeeperApp.FileSystem.BasePath}/{PathsData}/{yearId}/{monthId}.json");
+      // get the previus file index
+      index--;
+      if (index >= 0)
+        return int.Parse(Path.GetFileNameWithoutExtension(files[index]));
+      return -1;
+    }
+    /// <summary>
+    /// Gets the previus days id if there is is one. return -1 on error
+    /// </summary>
+    /// <param name="dayId"></param>
+    /// <returns></returns>
+    public int GetPreviusYear(int yearId)
+    {
+      var files = TimeKeeperApp.FileSystem.GetFilesInPath($"{PathsData}/");
+      var index = Array.IndexOf(files, $"{TimeKeeperApp.FileSystem.BasePath}/{PathsData}/{yearId}.json");
+      // get the previus file index
+      index--;
+      if (index >= 0)
+        return int.Parse(Path.GetFileNameWithoutExtension(files[index]));
+      return -1;
+    }
+
 
     public int[] GetAllYears()
     {
