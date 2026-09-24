@@ -32,7 +32,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.2.1";
+    string version = "1.2.2";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -608,9 +608,10 @@ namespace TimeKeeper.App
         Calendar.ActivateYear(activeYear);
         Calendar.ActivateMonth(activeMonth);
         Calendar.ActivateDay(activeDay);
+        
       }
       else
-      {
+      {       
         if (args.Length == 0 || !int.TryParse(args[0], out int yearID))
         {
           Terminal.WriteLine("Usage: End Of Year Commute");
@@ -639,7 +640,7 @@ namespace TimeKeeper.App
               officeDays += 1;
             }
           }
-          Terminal.WriteLine($"[{month:00}] {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month)} {officeDays:00} [{workingDays:00}] ");
+          Terminal.WriteLine($"[{month:00}] {CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month)} {officeDays:00}/{workingDays:00} ");
         }
         Terminal.InputContinue("End");
 
@@ -782,7 +783,6 @@ namespace TimeKeeper.App
       Calendar.ActivateMonth(activeMonth);
       Calendar.ActivateDay(activeDay);
     }
-
     void HandleDayGet(string[] args)
     {
       int dayID = -1;
@@ -1178,7 +1178,7 @@ namespace TimeKeeper.App
       for (int i = startindex; i < endindex; i++)
       {
         DayModel day = days[i];
-        Terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("yyyy MMM dd")} - Worked [{day.Worked.TotalHours:0.00}]");
+        Terminal.WriteLine($"[{day.Id:00}] {day.StartTime.Value.ToString("ddd")} - Worked {(day.IsAtOffice?"At Office:":"At Home  :")} [{day.Worked.TotalHours:0.00}]");
       }
       Terminal.WaitForKeypress();
     }
