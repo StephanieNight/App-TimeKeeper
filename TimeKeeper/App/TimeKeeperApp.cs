@@ -32,7 +32,7 @@ namespace TimeKeeper.App
     bool isRunning = true;
     int ActiveProjectId = 0;
 
-    string version = "1.3.0";
+    string version = "1.3.1";
 
     public CalendarManager Calendar { get; private set; }
     public CalendarSettings Project { get; private set; }
@@ -1201,6 +1201,7 @@ namespace TimeKeeper.App
               if (days.Count > 0)
               {
                 currentDay = days.Last().Id;
+                Calendar.ActivateDay(currentDay);
               }
             }
             else
@@ -1213,6 +1214,17 @@ namespace TimeKeeper.App
                 if(months.Count > 0)
                 {
                   currentMonth = months.Last().Id;
+                  Calendar.ActivateMonth(currentMonth);
+                  var days = Calendar.GetActiveMonth().GetDays();
+                  if (days.Count > 0)
+                  {
+                    currentDay = days.Last().Id;
+                    Calendar.ActivateDay(currentDay);
+                  }
+                  else
+                  {
+                    currentDay = -1;
+                  }
                 }
               }
               else
