@@ -865,6 +865,7 @@ namespace TimeKeeper.App
         if (Calendar.IsDayActive())
         {
           Calendar.GetActiveDay().IsAtOffice = !Calendar.GetActiveDay().IsAtOffice;
+          TooglePlannedBreaks();
           Calendar.Save();
           return;
         }
@@ -874,6 +875,7 @@ namespace TimeKeeper.App
         if (Calendar.IsDayActive())
         {
           Calendar.GetActiveDay().IsAtOffice = isAtOffice;
+          TooglePlannedBreaks();
           Calendar.Save();
           return;
         }
@@ -981,6 +983,37 @@ namespace TimeKeeper.App
       }
       Project.PlannedBreaks.Add(planed);
       SaveSettings();
+    }
+
+    void TooglePlannedBreaks()
+    {
+      var day = Calendar.GetActiveDay();
+      var plannedBreaks = Calendar.GetPlannedBreaks(DateOnly.FromDateTime(day.StartTime.Value));
+      if (day.IsAtOffice)
+      {
+        foreach (var p in plannedBreaks)
+        {
+          if (!day.Breaks.Contains(p))
+          {
+            day.Breaks.Add(p);
+          }
+        }
+      }
+      else
+      {
+        foreach (var p in plannedBreaks)
+        {
+          for (int i = 0; i < day.Breaks.Count(); i++)
+          {
+            if (day.Breaks[i].Equals(p))
+            {
+              day.Breaks.RemoveAt(i);
+              break;
+            }
+          }
+        }
+      }
+      Calendar.UpdateDeficit();
     }
     #endregion
 

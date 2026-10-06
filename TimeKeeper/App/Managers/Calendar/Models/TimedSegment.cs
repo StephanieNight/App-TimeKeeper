@@ -1,6 +1,4 @@
-﻿using System.Xml;
-
-namespace TimeKeeper.App.Managers.Calendar.Models
+﻿namespace TimeKeeper.App.Managers.Calendar.Models
 {
   class TimedSegment
   {
@@ -42,6 +40,18 @@ namespace TimeKeeper.App.Managers.Calendar.Models
         }
         return DateTime.Now - StartTime.Value;
       }
+    }
+    public override bool Equals(object obj)
+    {
+      if(obj is TimedSegment)
+      {
+        var t = obj as TimedSegment;
+        return ((Name == t.Name) &&
+              StartTime == t.StartTime &&
+              EndTime == t.EndTime);
+      }
+      return base.Equals(obj);
+      
     }
   }
 }
